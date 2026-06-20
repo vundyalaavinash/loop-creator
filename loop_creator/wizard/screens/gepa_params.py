@@ -29,6 +29,10 @@ class GEPAParamsScreen(Screen):
             f"Fitness threshold (0.0–1.0, halt when reached) — default {d.default_fitness_threshold}:"
         )
         yield Input(str(d.default_fitness_threshold), id="thresh-input")
+        yield Static(f"Top-K survivors per generation — default {d.default_population_size // 2 or 2}:")
+        yield Input("2", id="topk-input")
+        yield Static("Stagnation limit (halt after N gens with no improvement) — default 3:")
+        yield Input("3", id="stag-input")
         yield Static(
             "[dim]Tip: lower threshold = faster but lower quality. Higher = more iterations.[/dim]",
             classes="tip",
@@ -41,11 +45,15 @@ class GEPAParamsScreen(Screen):
             pop = int(self.query_one("#pop-input", Input).value)
             gens = int(self.query_one("#gen-input", Input).value)
             thresh = float(self.query_one("#thresh-input", Input).value)
+            top_k = int(self.query_one("#topk-input", Input).value)
+            stag = int(self.query_one("#stag-input", Input).value)
         except ValueError:
             return
         params = GEPAParams(
             population_size=max(1, pop),
+            top_k=max(1, top_k),
             max_generations=max(1, gens),
             fitness_threshold=max(0.0, min(1.0, thresh)),
+            stagnation_limit=max(1, stag),
         )
         self.dismiss(params)

@@ -33,11 +33,12 @@ class GenerationEvent:
 
 class GEPAEngine:
     def __init__(self, generator: LLMAdapter, judge: Judge | object,
-                 params: GEPAParams, scorer=None):
+                 params: GEPAParams, scorer=None, low_score_callback=None):
         self.generator = generator
         self.judge = judge
         self.params = params
         self.scorer = scorer
+        self._low_score_callback = low_score_callback
         self._all_variants: list[Variant] = []
 
     def run(self, task: str, goal: str, context: str = "") -> Generator[GenerationEvent, None, None]:
@@ -62,6 +63,7 @@ class GEPAEngine:
             return
 
         stagnation = 0
+        low_score_streak = 0
         survivors = sorted(seed_variants, key=lambda v: v.score, reverse=True)[:self.params.top_k]
         last_gen = 0
 
@@ -90,6 +92,15 @@ class GEPAEngine:
             else:
                 stagnation = 0
                 best_score = gen_best
+
+            if gen_best < 0.4:
+                low_score_streak += 1
+            else:
+                low_score_streak = 0
+
+            if low_score_streak >= 2 and self._low_score_callback:
+                self._low_score_callback()
+                low_score_streak = 0
 
             yield GenerationEvent(generation=gen, variants=new_variants, best_score=best_score)
 

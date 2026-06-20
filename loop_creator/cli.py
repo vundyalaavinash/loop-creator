@@ -100,6 +100,25 @@ def best(loop_id: str = typer.Argument(..., help="Loop ID")):
 
 
 @app.command()
+def edit(loop_id: str = typer.Argument(..., help="Loop ID to edit")):
+    """Re-open wizard pre-filled with an existing loop spec."""
+    spec_path = _loop_spec_path(loop_id)
+    if not os.path.isfile(spec_path):
+        console.print(f"[red]Loop '{loop_id}' not found at {spec_path}[/red]")
+        raise typer.Exit(1)
+    try:
+        from loop_creator.wizard.app import WizardApp
+        existing = load_spec(spec_path)
+        result = WizardApp(prefill=existing).run()
+        if result:
+            save_spec(result, spec_path)
+            console.print(f"[green]Loop '{loop_id}' updated.[/green]")
+    except ImportError:
+        console.print("[yellow]Wizard not available. Edit the spec file directly:[/yellow]")
+        console.print(f"  {spec_path}")
+
+
+@app.command()
 def context(loop_id: str = typer.Argument(..., help="Loop ID")):
     """Open the context editor for a loop."""
     try:

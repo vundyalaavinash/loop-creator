@@ -70,6 +70,9 @@ class DashboardApp(App):
         self._stopped.set()
         self.exit()
 
+    def action_pause(self):
+        self.notify("Pause not yet supported — press q to stop.", title="Pause")
+
     def action_show_best(self):
         import os
 

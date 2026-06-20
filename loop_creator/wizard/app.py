@@ -22,11 +22,12 @@ class WizardApp(App):
     TITLE = "loop-creator wizard"
     BINDINGS = [("escape", "back", "Back"), ("q", "quit", "Quit")]
 
-    def __init__(self):
+    def __init__(self, prefill: LoopSpec | None = None):
         super().__init__()
         self._result: LoopSpec | None = None
         self._state: dict = {}
         self._available = detect_available_adapters()
+        self._prefill = prefill
 
     def on_mount(self):
         self.push_screen(LoopTypeScreen(), self._on_loop_type)

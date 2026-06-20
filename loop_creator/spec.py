@@ -15,6 +15,7 @@ class GeneratorSpec(BaseModel):
 class JudgeSpec(BaseModel):
     cli: str
     rubric: str = ""
+    model: str = ""
 
 
 class ContextSpec(BaseModel):

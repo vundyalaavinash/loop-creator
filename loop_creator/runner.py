@@ -44,7 +44,7 @@ def run_loop(
     loop_type = get_loop_type(spec.type)
 
     generator = build_adapter(spec.generator.cli, spec.generator.model)
-    judge_adapter = build_adapter(spec.judge.cli)
+    judge_adapter = build_adapter(spec.judge.cli, spec.judge.model)
     judge = Judge(judge_adapter)
 
     scorer = None
@@ -65,31 +65,33 @@ def run_loop(
     if not spec.judge.rubric:
         goal = loop_type.rubric(spec.goal)
 
-    engine = GEPAEngine(generator=generator, judge=judge, params=spec.gepa, scorer=scorer)
+    def _low_score_warn():
+        import sys
+        print("\n⚠️  Scores are consistently low — your goal may be too vague. Consider refining it.", file=sys.stderr)
 
-    best: Variant | None = None
-    for event in engine.run(task=spec.task, goal=goal, context=context):
+    engine = GEPAEngine(generator=generator, judge=judge, params=spec.gepa, scorer=scorer, low_score_callback=_low_score_warn)
+
+    def on_event_wrapper(event: GenerationEvent):
         if on_event:
             on_event(event)
-        if event.event_type == "done":
-            best = event.variants[0]
+        if event.event_type == "generation":
             for v in event.variants:
                 append_history(loop_dir, {
-                    "generation": v.generation, "score": v.score,
-                    "prompt": v.prompt[:200], "reason": v.reason,
+                    "generation": v.generation,
+                    "score": v.score,
+                    "prompt": v.prompt[:200],
+                    "reason": v.reason,
                 })
+        elif event.event_type == "done":
+            best_v = event.variants[0]
+            best_path = os.path.join(loop_dir, "best.md")
+            with open(best_path, "w") as f:
+                f.write(
+                    f"# Best Result\n\nScore: {best_v.score:.3f}\nReason: {best_v.reason}\n\n"
+                    f"## Output\n\n{best_v.output}\n\n## Prompt\n\n{best_v.prompt}\n"
+                )
 
-    if best is None:
-        best = engine.top_candidates(1)[0]
+    for event in engine.run(task=spec.task, goal=goal, context=context):
+        on_event_wrapper(event)
 
-    best_path = os.path.join(loop_dir, "best.md")
-    with open(best_path, "w") as f:
-        f.write(
-            f"# Best Result\n\n"
-            f"Score: {best.score:.3f}\n"
-            f"Reason: {best.reason}\n\n"
-            f"## Output\n\n{best.output}\n\n"
-            f"## Prompt\n\n{best.prompt}\n"
-        )
-
-    return best
+    return engine.top_candidates(1)[0]
