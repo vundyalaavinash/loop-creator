@@ -5,6 +5,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from lc_server.routes import loops as loops_routes
+from lc_server.routes import files as files_routes
+from lc_server.routes import context as context_routes
 
 
 def create_app() -> FastAPI:
@@ -21,6 +23,8 @@ def create_app() -> FastAPI:
         return {"ok": True}
 
     app.include_router(loops_routes.router)
+    app.include_router(files_routes.router)
+    app.include_router(context_routes.router)
 
     return app
 
