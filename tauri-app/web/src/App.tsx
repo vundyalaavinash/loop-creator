@@ -3,11 +3,7 @@ import { Sidebar } from "./components/Sidebar";
 import { LoopList } from "./pages/LoopList";
 import { Builder } from "./pages/Builder";
 import { Dashboard } from "./pages/Dashboard";
-
-// Pages imported lazily — stubs until Tasks 12-13 implement them
-const Placeholder = ({ name }: { name: string }) => (
-  <div className="flex-1 p-8 text-muted font-mono">{name} — coming soon</div>
-);
+import { FileEditor } from "./pages/FileEditor";
 
 export default function App() {
   return (
@@ -21,7 +17,7 @@ export default function App() {
             <Route path="/loops/:id/run" element={<Dashboard />} />
             <Route path="/new" element={<Builder />} />
             <Route path="/edit/:id" element={<Builder />} />
-            <Route path="/files" element={<Placeholder name="FileEditor" />} />
+            <Route path="/files" element={<FileEditor />} />
           </Routes>
         </main>
       </div>

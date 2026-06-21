@@ -8,3 +8,12 @@ build/
 .env
 .loop-creator/
 node_modules/
+
+# SP2 Tauri build artifacts
+tauri-app/src-tauri/binaries/loop_creator_server-*
+tauri-app/dist/
+tauri-app/build-tmp/
+tauri-app/.venv-build/
+tauri-app/web/node_modules/
+tauri-app/web/dist/
+tauri-app/src-tauri/target/
