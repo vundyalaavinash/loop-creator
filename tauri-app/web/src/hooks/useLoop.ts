@@ -25,17 +25,25 @@ export function useLoop() {
       if (!response.body) throw new Error("No response body");
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
+      let sseBuffer = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const text = decoder.decode(value, { stream: true });
-        for (const line of text.split("\n")) {
-          if (!line.startsWith("data: ")) continue;
-          const ev: GenerationEvent = JSON.parse(line.slice(6));
-          setEvents((prev) => [...prev, ev]);
-          if (ev.event_type === "done" && ev.variants.length > 0) {
-            setBestVariant(ev.variants[0]);
+        sseBuffer += decoder.decode(value, { stream: true });
+        const parts = sseBuffer.split("\n\n");
+        sseBuffer = parts.pop() ?? "";
+        for (const part of parts) {
+          const dataLine = part.split("\n").find((l) => l.startsWith("data: "));
+          if (!dataLine) continue;
+          try {
+            const ev: GenerationEvent = JSON.parse(dataLine.slice(6));
+            setEvents((prev) => [...prev, ev]);
+            if (ev.event_type === "done" && ev.variants.length > 0) {
+              setBestVariant(ev.variants[0]);
+            }
+          } catch {
+            // malformed SSE line — skip
           }
         }
       }

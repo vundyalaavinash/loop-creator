@@ -10,6 +10,7 @@ export function useFiles() {
     const r = await fetch(
       `${getBaseUrl()}/api/files?path=${encodeURIComponent(path)}`
     );
+    if (!r.ok) { setError(`Failed to list files: ${r.status}`); return []; }
     const data: FileNode[] = await r.json();
     setFiles(data);
     return data;
@@ -19,6 +20,7 @@ export function useFiles() {
     const r = await fetch(
       `${getBaseUrl()}/api/files/content?path=${encodeURIComponent(path)}`
     );
+    if (!r.ok) { setError(`Failed to read file: ${r.status}`); return ""; }
     const data = await r.json();
     setContent(data.content);
     return data.content as string;

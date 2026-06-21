@@ -73,7 +73,7 @@ export function LoopList() {
             )}
             <div className="flex gap-2 flex-shrink-0">
               <button
-                onClick={() => navigate(`/loops/${loop.id}/run`)}
+                onClick={() => navigate(`/loops/${loop.id}/run`, { state: { startRun: true } })}
                 className="text-xs font-mono px-2 py-1 border border-accent-teal text-accent-teal rounded hover:bg-accent-teal hover:text-base transition-colors"
               >
                 Run

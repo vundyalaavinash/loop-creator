@@ -43,7 +43,7 @@ export function FileEditor() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    listFiles(dirPath);
+    if (dirPath) listFiles(dirPath);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

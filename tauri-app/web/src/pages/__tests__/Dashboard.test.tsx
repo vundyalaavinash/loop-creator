@@ -11,7 +11,7 @@ test("renders loop id and stop button", () => {
   } as any);
 
   render(
-    <MemoryRouter initialEntries={["/loops/myloop/run"]}>
+    <MemoryRouter initialEntries={[{ pathname: "/loops/myloop/run", state: { startRun: true } }]}>
       <Routes>
         <Route path="/loops/:id/run" element={<Dashboard />} />
       </Routes>
