@@ -54,7 +54,8 @@ def run_loop(
     # Build context bundle
     ctx_parts = {}
     if spec.context.project:
-        ctx_parts["project"] = scrape_project(os.getcwd())
+        root = spec.context.project_root or os.getcwd()
+        ctx_parts["project"] = scrape_project(root)
     if spec.context.history:
         ctx_parts["history"] = load_history_summary(loop_dir)
     if spec.context.external:

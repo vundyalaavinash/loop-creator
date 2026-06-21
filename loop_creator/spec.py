@@ -23,6 +23,7 @@ class ContextSpec(BaseModel):
     history: bool = True
     external: list[str] = Field(default_factory=list)
     mcp_auto_discover: bool = True
+    project_root: str = ""
 
 
 class GEPAParams(BaseModel):
