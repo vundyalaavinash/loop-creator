@@ -4,6 +4,7 @@ use std::net::TcpListener;
 use std::process::{Child, Command};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
+use tauri::webview::PageLoadPayload;
 
 struct SidecarState(Mutex<Option<Child>>);
 
@@ -52,9 +53,10 @@ fn main() {
             }
 
             let window = app.get_webview_window("main").unwrap();
-            window
-                .eval(&format!("window.__LC_PORT__ = {}", port))
-                .unwrap();
+            let port_val = port; // capture port for closure
+            window.on_page_load(move |win, _: PageLoadPayload| {
+                let _ = win.eval(&format!("window.__LC_PORT__ = {}", port_val));
+            });
             window.show().unwrap();
 
             Ok(())
