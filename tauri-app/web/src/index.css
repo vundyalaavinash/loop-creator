@@ -1,0 +1,12 @@
+@import "@fontsource/inter";
+@import "@fontsource/jetbrains-mono";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #1c1c1c;
+  color: #f0f0f0;
+  font-family: "Inter", sans-serif;
+  margin: 0;
+}
