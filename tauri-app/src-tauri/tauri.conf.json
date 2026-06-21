@@ -1,0 +1,37 @@
+{
+  "productName": "Loop Creator",
+  "version": "0.1.0",
+  "identifier": "dev.loop-creator.app",
+  "build": {
+    "frontendDist": "../web/dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "cd ../web && npm run dev",
+    "beforeBuildCommand": "cd ../web && npm run build"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "title": "Loop Creator",
+        "width": 1280,
+        "height": 840,
+        "visible": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "dmg",
+    "externalBin": ["binaries/loop_creator_server"],
+    "icon": [],
+    "macOS": {
+      "entitlements": null,
+      "exceptionDomain": "",
+      "frameworks": [],
+      "signingIdentity": null
+    }
+  }
+}
