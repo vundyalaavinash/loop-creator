@@ -8,10 +8,10 @@ global.fetch = vi.fn().mockResolvedValue({ json: async () => [] } as any);
 test("renders all 7 form sections", () => {
   render(<MemoryRouter><Builder /></MemoryRouter>);
   expect(screen.getByText(/Loop Type/i)).toBeInTheDocument();
-  expect(screen.getByText(/Task/i)).toBeInTheDocument();
-  expect(screen.getByText(/Goal/i)).toBeInTheDocument();
-  expect(screen.getByText(/Context/i)).toBeInTheDocument();
-  expect(screen.getByText(/Generator/i)).toBeInTheDocument();
+  expect(screen.getAllByText(/Task/i)[0]).toBeInTheDocument();
+  expect(screen.getAllByText(/Goal/i)[0]).toBeInTheDocument();
+  expect(screen.getAllByText(/Context/i)[0]).toBeInTheDocument();
+  expect(screen.getAllByText(/Generator/i)[0]).toBeInTheDocument();
   expect(screen.getByText(/GEPA Params/i)).toBeInTheDocument();
   expect(screen.getByText(/Preview/i)).toBeInTheDocument();
 });

@@ -112,7 +112,7 @@ export function Builder() {
         <label className="flex items-center gap-2 text-sm text-primary font-mono mb-2 cursor-pointer">
           <input type="checkbox" checked={spec.context.project}
             onChange={(e) => set("context", { ...spec.context, project: e.target.checked })} />
-          Scrape project files
+          Scrape project context
         </label>
         <label className="flex items-center gap-2 text-sm text-primary font-mono mb-2 cursor-pointer">
           <input type="checkbox" checked={spec.context.history}
@@ -184,10 +184,9 @@ export function Builder() {
       {/* Preview + actions */}
       <div className="mb-5 bg-surface rounded-lg border border-border-color p-4">
         <p className={SECTION_LABEL}>Preview</p>
-        <div
-          data-json={JSON.stringify(spec, null, 2)}
-          className="json-preview text-xs font-mono text-muted whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto"
-        />
+        <pre className="text-xs font-mono text-muted whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">
+          {JSON.stringify(spec, null, 2)}
+        </pre>
       </div>
 
       <div className="flex gap-3">

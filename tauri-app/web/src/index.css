@@ -11,7 +11,3 @@ body {
   margin: 0;
 }
 
-.json-preview::before {
-  content: attr(data-json);
-  white-space: pre-wrap;
-}
