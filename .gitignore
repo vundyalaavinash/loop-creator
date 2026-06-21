@@ -7,3 +7,4 @@ dist/
 build/
 .env
 .loop-creator/
+node_modules/
