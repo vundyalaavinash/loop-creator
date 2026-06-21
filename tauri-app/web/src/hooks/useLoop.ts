@@ -1,0 +1,57 @@
+import { useState, useCallback, useRef } from "react";
+import { GenerationEvent, Variant, getBaseUrl } from "../types";
+
+export function useLoop() {
+  const [events, setEvents] = useState<GenerationEvent[]>([]);
+  const [bestVariant, setBestVariant] = useState<Variant | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const run = useCallback(async (loopId: string) => {
+    setEvents([]);
+    setBestVariant(null);
+    setError(null);
+    setIsRunning(true);
+
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+
+    try {
+      const response = await fetch(`${getBaseUrl()}/api/loops/${loopId}/run`, {
+        method: "POST",
+        signal: ctrl.signal,
+      });
+      if (!response.body) throw new Error("No response body");
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const text = decoder.decode(value, { stream: true });
+        for (const line of text.split("\n")) {
+          if (!line.startsWith("data: ")) continue;
+          const ev: GenerationEvent = JSON.parse(line.slice(6));
+          setEvents((prev) => [...prev, ev]);
+          if (ev.event_type === "done" && ev.variants.length > 0) {
+            setBestVariant(ev.variants[0]);
+          }
+        }
+      }
+    } catch (e) {
+      if ((e as Error).name !== "AbortError") {
+        setError(e instanceof Error ? e.message : "Unknown error");
+      }
+    } finally {
+      setIsRunning(false);
+    }
+  }, []);
+
+  const stop = useCallback(() => {
+    abortRef.current?.abort();
+    setIsRunning(false);
+  }, []);
+
+  return { events, bestVariant, isRunning, error, run, stop };
+}
