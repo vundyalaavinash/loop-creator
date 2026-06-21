@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Sidebar } from "./components/Sidebar";
 import { LoopList } from "./pages/LoopList";
 import { Builder } from "./pages/Builder";
+import { Dashboard } from "./pages/Dashboard";
 
 // Pages imported lazily — stubs until Tasks 12-13 implement them
 const Placeholder = ({ name }: { name: string }) => (
@@ -17,7 +18,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/loops" replace />} />
             <Route path="/loops" element={<LoopList />} />
-            <Route path="/loops/:id/run" element={<Placeholder name="Dashboard" />} />
+            <Route path="/loops/:id/run" element={<Dashboard />} />
             <Route path="/new" element={<Builder />} />
             <Route path="/edit/:id" element={<Builder />} />
             <Route path="/files" element={<Placeholder name="FileEditor" />} />
