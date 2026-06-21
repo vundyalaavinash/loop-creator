@@ -4,6 +4,8 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from lc_server.routes import loops as loops_routes
+
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Loop Creator Server", version="0.1.0")
@@ -17,6 +19,8 @@ def create_app() -> FastAPI:
     @app.get("/health")
     def health():
         return {"ok": True}
+
+    app.include_router(loops_routes.router)
 
     return app
 
