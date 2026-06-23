@@ -60,6 +60,8 @@ def test_run_prompt_streams_sse(client, tmp_path):
     with patch("lc_server.routes.prompts.run_prompt", _fake_run_prompt):
         r = client.post("/api/prompts/myprompt/run")
     assert "text/event-stream" in r.headers["content-type"]
+    assert "data: " in r.text
+    assert "generation" in r.text
 
 
 def test_use_prompt(client, tmp_path):

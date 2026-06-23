@@ -7,6 +7,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 from creator.prompts.spec import PromptSpec
 from creator.prompts.registry import (
@@ -19,6 +20,10 @@ from creator.prompts.registry import (
 from creator.prompts.runner import run_prompt
 
 router = APIRouter(prefix="/api/prompts")
+
+
+class UseBody(BaseModel):
+    variables: dict[str, str] = {}
 
 
 @router.get("")
@@ -88,7 +93,7 @@ def get_prompt_output(name: str):
 
 
 @router.post("/{name}/use")
-def use_prompt(name: str, body: dict):
+def use_prompt(name: str, body: UseBody):
     output = prompt_dir(name) / f"{name}.md"
     if not output.exists():
         raise HTTPException(status_code=404, detail="No output yet — run the prompt first")
@@ -96,7 +101,6 @@ def use_prompt(name: str, body: dict):
     if template.startswith("---"):
         end = template.find("---", 3)
         template = template[end + 3:].lstrip("\n")
-    variables = body.get("variables", {})
-    for key, val in variables.items():
+    for key, val in body.variables.items():
         template = template.replace(f"{{{{{key}}}}}", val)
     return {"resolved": template}
