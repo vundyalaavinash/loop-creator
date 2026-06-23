@@ -244,8 +244,8 @@ def skill_run(
     if voice:
         spec.description_goal = _transcribe_from_mic()
     d = skill_dir(name)
-    run_skill(spec, d, on_event=lambda e: typer.echo(f"[gen {e.generation}] best={e.best_score:.2f}"))
-    typer.echo(f"\nDone.")
+    variant = run_skill(spec, d, on_event=lambda e: typer.echo(f"[gen {e.generation}] best={e.best_score:.2f}"))
+    typer.echo(f"\nDone. Best score: {variant.score:.2f}")
     skill_md = d / "SKILL.md"
     if skill_md.exists():
         typer.echo(skill_md.read_text())
