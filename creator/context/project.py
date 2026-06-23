@@ -27,7 +27,7 @@ def scrape_project(root: str) -> str:
 
 
 def _tree(root: str, max_depth: int) -> str:
-    SKIP = {".git", "__pycache__", "node_modules", ".venv", "venv", "dist", "build", ".loop-creator"}
+    SKIP = {".git", "__pycache__", "node_modules", ".venv", "venv", "dist", "build", ".creator"}
     lines = []
     for dirpath, dirnames, filenames in os.walk(root):
         depth = dirpath.replace(root, "").count(os.sep)

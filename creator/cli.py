@@ -15,16 +15,16 @@ from creator.context.history import load_history_summary
 app = typer.Typer(help="loop-creator — build and run GEPA-powered AI dev loops")
 console = Console()
 
-LOOPS_DIR = "loops"
-STATE_DIR = ".loop-creator"
+CREATOR_DIR = Path.home() / ".creator"
+LOOPS_DIR = CREATOR_DIR / "loops"
 
 
-def _loop_dir(loop_id: str) -> str:
-    return os.path.join(STATE_DIR, loop_id)
+def _loop_dir(loop_id: str) -> Path:
+    return LOOPS_DIR / loop_id
 
 
-def _loop_spec_path(loop_id: str) -> str:
-    return os.path.join(LOOPS_DIR, f"{loop_id}.yaml")
+def _loop_spec_path(loop_id: str) -> Path:
+    return LOOPS_DIR / f"{loop_id}.yaml"
 
 
 @app.command()
@@ -34,9 +34,9 @@ def new():
         from creator.wizard.app import WizardApp
         result = WizardApp().run()
         if result:
-            os.makedirs(LOOPS_DIR, exist_ok=True)
+            LOOPS_DIR.mkdir(parents=True, exist_ok=True)
             path = _loop_spec_path(result.id)
-            save_spec(result, path)
+            save_spec(result, str(path))
             console.print(f"[green]Loop saved to {path}[/green]")
             if typer.confirm("Run it now?"):
                 _do_run(result)
@@ -57,8 +57,7 @@ def run(
 @app.command(name="ls")
 def list_loops():
     """List all saved loops."""
-    loops_path = Path(LOOPS_DIR)
-    if not loops_path.exists():
+    if not LOOPS_DIR.exists():
         console.print("[yellow]No loops saved yet. Run 'loop-creator new' to create one.[/yellow]")
         return
     table = Table(title="Saved Loops")
@@ -66,11 +65,11 @@ def list_loops():
     table.add_column("Type")
     table.add_column("Task")
     table.add_column("Best Score")
-    for f in sorted(loops_path.glob("*.yaml")):
+    for f in sorted(LOOPS_DIR.glob("*.yaml")):
         spec = load_spec(str(f))
-        best_path = os.path.join(_loop_dir(spec.id), "best.md")
+        best_path = _loop_dir(spec.id) / "best.md"
         score = "—"
-        if os.path.isfile(best_path):
+        if best_path.is_file():
             for line in open(best_path):
                 if line.startswith("Score:"):
                     score = line.split(":", 1)[1].strip()
@@ -92,8 +91,8 @@ def history(loop_id: str = typer.Argument(..., help="Loop ID")):
 @app.command()
 def best(loop_id: str = typer.Argument(..., help="Loop ID")):
     """Print the best result for a loop."""
-    path = os.path.join(_loop_dir(loop_id), "best.md")
-    if not os.path.isfile(path):
+    path = _loop_dir(loop_id) / "best.md"
+    if not path.is_file():
         console.print(f"[red]No best result found for '{loop_id}'. Has this loop been run?[/red]")
         raise typer.Exit(1)
     console.print(open(path).read())
@@ -103,15 +102,15 @@ def best(loop_id: str = typer.Argument(..., help="Loop ID")):
 def edit(loop_id: str = typer.Argument(..., help="Loop ID to edit")):
     """Re-open wizard pre-filled with an existing loop spec."""
     spec_path = _loop_spec_path(loop_id)
-    if not os.path.isfile(spec_path):
+    if not spec_path.is_file():
         console.print(f"[red]Loop '{loop_id}' not found at {spec_path}[/red]")
         raise typer.Exit(1)
     try:
         from creator.wizard.app import WizardApp
-        existing = load_spec(spec_path)
+        existing = load_spec(str(spec_path))
         result = WizardApp(prefill=existing).run()
         if result:
-            save_spec(result, spec_path)
+            save_spec(result, str(spec_path))
             console.print(f"[green]Loop '{loop_id}' updated.[/green]")
     except ImportError:
         console.print("[yellow]Wizard not available. Edit the spec file directly:[/yellow]")
@@ -124,13 +123,13 @@ def context(loop_id: str = typer.Argument(..., help="Loop ID")):
     try:
         from creator.wizard.app import ContextEditorApp
         spec_path = _loop_spec_path(loop_id)
-        if not os.path.isfile(spec_path):
+        if not spec_path.is_file():
             console.print(f"[red]Loop '{loop_id}' not found at {spec_path}[/red]")
             raise typer.Exit(1)
-        spec = load_spec(spec_path)
+        spec = load_spec(str(spec_path))
         updated = ContextEditorApp(spec).run()
         if updated:
-            save_spec(updated, spec_path)
+            save_spec(updated, str(spec_path))
             console.print(f"[green]Context updated for {loop_id}[/green]")
     except (ImportError, AttributeError):
         console.print("[yellow]Wizard not yet implemented, save spec manually[/yellow]")
@@ -149,7 +148,7 @@ def _do_run(spec: LoopSpec, watch: bool = False):
     if watch:
         try:
             from creator.wizard.dashboard import DashboardApp
-            DashboardApp(spec=spec, loop_dir=loop_dir).run()
+            DashboardApp(spec=spec, loop_dir=str(loop_dir)).run()
         except (ImportError, AttributeError):
             console.print("[yellow]Dashboard not yet implemented, running without watch mode[/yellow]")
             _do_run(spec, watch=False)
@@ -162,13 +161,13 @@ def _do_run(spec: LoopSpec, watch: bool = False):
                 progress.update(task, advance=1,
                     description=f"Gen {event.generation}/{spec.gepa.max_generations} · Best: {event.best_score:.2f}")
 
-            best_variant = run_loop(spec, loop_dir, on_event=on_event)
+            best_variant = run_loop(spec, str(loop_dir), on_event=on_event)
 
         console.print(Panel(
             f"Score: [green]{best_variant.score:.3f}[/green]\nReason: {best_variant.reason}\n\n{best_variant.output[:500]}",
             title=f"[bold]Best Result — {spec.id}[/bold]"
         ))
-        console.print(f"Full result saved to [cyan]{loop_dir}/best.md[/cyan]")
+        console.print(f"Full result saved to [cyan]{str(loop_dir)}/best.md[/cyan]")
 
 
 if __name__ == "__main__":
