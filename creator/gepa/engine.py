@@ -33,12 +33,14 @@ class GenerationEvent:
 
 class GEPAEngine:
     def __init__(self, generator: LLMAdapter, judge: Judge | object,
-                 params: GEPAParams, scorer=None, low_score_callback=None):
+                 params: GEPAParams, scorer=None, low_score_callback=None,
+                 system_prompt: str = SEED_SYSTEM):
         self.generator = generator
         self.judge = judge
         self.params = params
         self.scorer = scorer
         self._low_score_callback = low_score_callback
+        self.system_prompt = system_prompt
         self._all_variants: list[Variant] = []
 
     def run(self, task: str, goal: str, context: str = "") -> Generator[GenerationEvent, None, None]:
@@ -48,7 +50,7 @@ class GEPAEngine:
         seed_variants = []
         for i in range(self.params.population_size):
             prompt = f"Task: {task}{ctx_block}"
-            output = self.generator.call(SEED_SYSTEM, prompt)
+            output = self.generator.call(self.system_prompt,prompt)
             score, reason = self.judge.score(output, goal)
             v = Variant(prompt=prompt, output=output, score=score, reason=reason, generation=0)
             seed_variants.append(v)
@@ -79,7 +81,7 @@ class GEPAEngine:
                     new_prompt = mutate(self.generator, combined, "crossover", context=context)
                 else:
                     new_prompt = mutate(self.generator, parent.prompt, op, context=context)
-                output = self.generator.call(SEED_SYSTEM, new_prompt)
+                output = self.generator.call(self.system_prompt,new_prompt)
                 score, reason = self.judge.score(output, goal)
                 v = Variant(prompt=new_prompt, output=output, score=score,
                             reason=reason, generation=gen)
