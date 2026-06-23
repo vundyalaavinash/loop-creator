@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import type { PromptSpec } from "../types";
-
-const port = () => (window as any).__LC_PORT__ ?? 5001;
+import { getBaseUrl } from "../types";
 
 export function PromptUse() {
   const { name } = useParams<{ name: string }>();
@@ -13,7 +12,7 @@ export function PromptUse() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`http://localhost:${port()}/api/prompts/${name}`, { signal: controller.signal })
+    fetch(`${getBaseUrl()}/api/prompts/${name}`, { signal: controller.signal })
       .then(r => r.json())
       .then((s: PromptSpec) => {
         setSpec(s);
@@ -25,12 +24,13 @@ export function PromptUse() {
   const fill = async () => {
     setError(null);
     try {
-      const res = await fetch(`http://localhost:${port()}/api/prompts/${name}/use`, {
+      const res = await fetch(`${getBaseUrl()}/api/prompts/${name}/use`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ variables: values }),
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? "Request failed");
       setResolved(data.resolved);
     } catch (err: any) {
       setError(err?.message ?? "Failed to fill prompt");

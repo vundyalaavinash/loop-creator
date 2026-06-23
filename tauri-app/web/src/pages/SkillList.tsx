@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { SkillSummary } from "../types";
-
-const port = () => (window as any).__LC_PORT__ ?? 5001;
+import { getBaseUrl } from "../types";
 
 export function SkillList() {
   const [skills, setSkills] = useState<SkillSummary[]>([]);
 
   useEffect(() => {
-    fetch(`http://localhost:${port()}/api/skills`)
+    fetch(`${getBaseUrl()}/api/skills`)
       .then(r => r.json())
       .then(setSkills);
   }, []);

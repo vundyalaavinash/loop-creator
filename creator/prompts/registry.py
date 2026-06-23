@@ -41,4 +41,7 @@ def list_prompts() -> list[dict]:
 
 
 def delete_prompt(name: str) -> None:
-    shutil.rmtree(prompt_dir(name))
+    d = prompt_dir(name)
+    if not d.exists():
+        raise FileNotFoundError(f"Prompt '{name}' not found")
+    shutil.rmtree(d)

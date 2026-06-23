@@ -2,8 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { usePrompt } from "../hooks/usePrompt";
 import { EvolutionViewer } from "../components/EvolutionViewer";
 import { ResultsPanel } from "../components/ResultsPanel";
-
-const port = () => (window as any).__LC_PORT__ ?? 5001;
+import { getBaseUrl } from "../types";
 
 export function PromptDashboard() {
   const { name } = useParams<{ name: string }>();
@@ -37,7 +36,7 @@ export function PromptDashboard() {
         <EvolutionViewer events={events} />
         <ResultsPanel
           bestVariant={bestVariant}
-          outputUrl={`http://localhost:${port()}/api/prompts/${name}/output`}
+          outputUrl={`${getBaseUrl()}/api/prompts/${name}/output`}
         />
       </div>
     </div>

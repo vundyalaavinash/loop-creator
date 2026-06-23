@@ -24,7 +24,7 @@ test("renders variable inputs from spec", async () => {
 test("submits variables and shows resolved text", async () => {
   global.fetch = vi.fn()
     .mockResolvedValueOnce({ json: async () => ({ name: "commit-msg", variables: ["diff"], description_goal: "", generator: {cli:"claude",model:""}, judge: {cli:"claude",rubric:"",model:""}, gepa: {} }) } as any)
-    .mockResolvedValueOnce({ json: async () => ({ resolved: "Write commit for added login." }) } as any);
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ resolved: "Write commit for added login." }) } as any);
 
   render(
     <MemoryRouter initialEntries={["/prompts/commit-msg/use"]}>

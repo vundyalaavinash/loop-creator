@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { getBaseUrl } from "../types";
 
-const port = () => (window as any).__LC_PORT__ ?? 5001;
 const CATEGORIES = ["code-review", "testing", "documentation", "devops", "data-analysis", "custom"];
 const CLI_OPTIONS = ["claude", "ollama", "devin"];
 
@@ -12,10 +12,11 @@ export function SkillBuilder() {
     name: "", description_goal: "", category: "custom",
     generator_cli: "claude", judge_cli: "claude",
   });
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (name) {
-      fetch(`http://localhost:${port()}/api/skills/${name}`)
+      fetch(`${getBaseUrl()}/api/skills/${name}`)
         .then(r => r.json())
         .then(spec => setForm({
           name: spec.name, description_goal: spec.description_goal, category: spec.category,
@@ -25,16 +26,22 @@ export function SkillBuilder() {
   }, [name]);
 
   const save = async () => {
+    setError(null);
     const payload = {
       name: form.name, description_goal: form.description_goal, category: form.category,
       generator: { cli: form.generator_cli, model: "" },
       judge: { cli: form.judge_cli, rubric: "", model: "" },
     };
-    await fetch(`http://localhost:${port()}/api/skills`, {
+    const res = await fetch(`${getBaseUrl()}/api/skills`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError((data as any)?.detail ?? "Save failed");
+      return;
+    }
     navigate("/skills");
   };
 
@@ -77,6 +84,7 @@ export function SkillBuilder() {
           padding: "10px 24px", fontWeight: 700, cursor: "pointer", fontSize: 15 }}>
         Save Skill
       </button>
+      {error && <p style={{ color: "#FF6B6B", marginTop: 12 }}>{error}</p>}
     </div>
   );
 }

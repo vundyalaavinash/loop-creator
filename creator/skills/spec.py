@@ -1,5 +1,6 @@
+import re
 from typing import Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from creator.spec import GeneratorSpec, JudgeSpec
 
 SKILL_CATEGORIES = ["code-review", "testing", "documentation", "devops", "data-analysis", "custom"]
@@ -48,3 +49,10 @@ class SkillSpec(BaseModel):
     generator: GeneratorSpec = Field(default_factory=GeneratorSpec)
     judge: JudgeSpec = Field(default_factory=JudgeSpec)
     gepa: SkillGEPAParams = Field(default_factory=SkillGEPAParams)
+
+    @field_validator("name")
+    @classmethod
+    def valid_name(cls, v: str) -> str:
+        if not re.fullmatch(r"[a-zA-Z0-9_-]{1,64}", v):
+            raise ValueError("name must be 1–64 alphanumeric, dash, or underscore characters")
+        return v

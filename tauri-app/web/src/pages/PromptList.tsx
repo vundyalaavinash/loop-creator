@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { PromptSummary } from "../types";
-
-const port = () => (window as any).__LC_PORT__ ?? 5001;
+import { getBaseUrl } from "../types";
 
 export function PromptList() {
   const [prompts, setPrompts] = useState<PromptSummary[]>([]);
 
   useEffect(() => {
-    fetch(`http://localhost:${port()}/api/prompts`)
+    fetch(`${getBaseUrl()}/api/prompts`)
       .then(r => r.json())
       .then(setPrompts);
   }, []);

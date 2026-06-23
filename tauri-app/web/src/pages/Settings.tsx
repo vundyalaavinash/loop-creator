@@ -1,20 +1,24 @@
 import { useEffect, useState } from "react";
 import type { AppConfig } from "../types";
-
-const port = () => (window as any).__LC_PORT__ ?? 5001;
+import { getBaseUrl } from "../types";
 
 export function Settings() {
   const [config, setConfig] = useState<AppConfig>({ whisper_backend: "local", whisper_model: "base", openai_api_key: "" });
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`http://localhost:${port()}/api/config`)
-      .then(r => r.json())
-      .then(setConfig);
+    fetch(`${getBaseUrl()}/api/config`)
+      .then(r => {
+        if (!r.ok) throw new Error("Failed to load config");
+        return r.json();
+      })
+      .then(setConfig)
+      .catch(err => setError(err.message));
   }, []);
 
   const save = async () => {
-    await fetch(`http://localhost:${port()}/api/config`, {
+    await fetch(`${getBaseUrl()}/api/config`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(config),
@@ -45,6 +49,7 @@ export function Settings() {
   return (
     <div style={{ padding: 24 }}>
       <h2 style={{ color: "#F0F0F0", marginBottom: 24 }}>Settings</h2>
+      {error && <p style={{ color: "#FF6B6B" }}>{error}</p>}
       {field("Whisper Backend", "whisper-backend", config.whisper_backend,
         v => setConfig(c => ({ ...c, whisper_backend: v })), ["local", "openai"])}
       {field("Whisper Model", "whisper-model", config.whisper_model,

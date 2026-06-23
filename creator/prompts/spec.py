@@ -1,4 +1,5 @@
-from pydantic import BaseModel, Field
+import re
+from pydantic import BaseModel, Field, field_validator
 from creator.spec import GeneratorSpec, JudgeSpec
 
 PROMPT_RUBRICS: dict[str, str] = {
@@ -31,3 +32,10 @@ class PromptSpec(BaseModel):
     generator: GeneratorSpec = Field(default_factory=GeneratorSpec)
     judge: JudgeSpec = Field(default_factory=JudgeSpec)
     gepa: PromptGEPAParams = Field(default_factory=PromptGEPAParams)
+
+    @field_validator("name")
+    @classmethod
+    def valid_name(cls, v: str) -> str:
+        if not re.fullmatch(r"[a-zA-Z0-9_-]{1,64}", v):
+            raise ValueError("name must be 1–64 alphanumeric, dash, or underscore characters")
+        return v

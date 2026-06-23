@@ -45,7 +45,10 @@ def list_skills() -> list[dict]:
 
 
 def delete_skill(name: str) -> None:
-    shutil.rmtree(skill_dir(name))
+    d = skill_dir(name)
+    if not d.exists():
+        raise FileNotFoundError(f"Skill '{name}' not found")
+    shutil.rmtree(d)
 
 
 def publish_skill(name: str) -> Path:

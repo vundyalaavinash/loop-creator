@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
-const port = () => (window as any).__LC_PORT__ ?? 5001;
+import { getBaseUrl } from "../types";
 
 export function PromptBuilder() {
   const { name } = useParams<{ name: string }>();
@@ -10,10 +9,11 @@ export function PromptBuilder() {
     name: "", description_goal: "", variables: "",
     generator_cli: "claude", judge_cli: "claude",
   });
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (name) {
-      fetch(`http://localhost:${port()}/api/prompts/${name}`)
+      fetch(`${getBaseUrl()}/api/prompts/${name}`)
         .then(r => r.json())
         .then(spec => setForm({
           name: spec.name, description_goal: spec.description_goal,
@@ -24,17 +24,23 @@ export function PromptBuilder() {
   }, [name]);
 
   const save = async () => {
+    setError(null);
     const payload = {
       name: form.name, description_goal: form.description_goal,
       variables: form.variables.split(",").map((v: string) => v.trim()).filter(Boolean),
       generator: { cli: form.generator_cli, model: "" },
       judge: { cli: form.judge_cli, rubric: "", model: "" },
     };
-    await fetch(`http://localhost:${port()}/api/prompts`, {
+    const res = await fetch(`${getBaseUrl()}/api/prompts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError((data as any)?.detail ?? "Save failed");
+      return;
+    }
     navigate("/prompts");
   };
 
@@ -67,6 +73,7 @@ export function PromptBuilder() {
           padding: "10px 24px", fontWeight: 700, cursor: "pointer", fontSize: 15 }}>
         Save Prompt
       </button>
+      {error && <p style={{ color: "#FF6B6B", marginTop: 12 }}>{error}</p>}
     </div>
   );
 }

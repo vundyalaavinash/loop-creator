@@ -13,6 +13,8 @@ def record_audio() -> bytes:
     with sd.InputStream(samplerate=sample_rate, channels=1, dtype="int16", callback=callback):
         input()
 
+    if not chunks:
+        raise RuntimeError("No audio recorded — check your microphone input")
     audio = np.concatenate(chunks, axis=0)
     buf = io.BytesIO()
     with wave.open(buf, "wb") as wf:

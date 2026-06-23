@@ -2,8 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useSkill } from "../hooks/useSkill";
 import { EvolutionViewer } from "../components/EvolutionViewer";
 import { ResultsPanel } from "../components/ResultsPanel";
-
-const port = () => (window as any).__LC_PORT__ ?? 5001;
+import { getBaseUrl } from "../types";
 
 export function SkillDashboard() {
   const { name } = useParams<{ name: string }>();
@@ -37,6 +36,7 @@ export function SkillDashboard() {
         <EvolutionViewer events={events} isRunning={isRunning} />
         <ResultsPanel
           bestVariant={bestVariant}
+          outputUrl={`${getBaseUrl()}/api/skills/${name}/output`}
         />
       </div>
     </div>
