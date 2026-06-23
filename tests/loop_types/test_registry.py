@@ -1,5 +1,5 @@
 import pytest
-from loop_creator.loop_types.registry import get_loop_type, LoopTypeConfig
+from creator.loop_types.registry import get_loop_type, LoopTypeConfig
 
 
 def test_coding_type_exists():

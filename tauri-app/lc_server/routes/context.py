@@ -1,8 +1,8 @@
 from __future__ import annotations
 from pathlib import Path
 from fastapi import APIRouter
-from loop_creator.context.project import scrape_project
-from loop_creator.context.mcp import discover_mcp_servers
+from creator.context.project import scrape_project
+from creator.context.mcp import discover_mcp_servers
 
 router = APIRouter(prefix="/api/context")
 

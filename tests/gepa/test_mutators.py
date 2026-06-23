@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
-from loop_creator.gepa.mutators import mutate
-from loop_creator.adapters.base import LLMAdapter
+from creator.gepa.mutators import mutate
+from creator.adapters.base import LLMAdapter
 
 
 class EchoAdapter(LLMAdapter):

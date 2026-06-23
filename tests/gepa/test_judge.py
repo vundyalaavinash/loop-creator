@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
-from loop_creator.gepa.judge import Judge
-from loop_creator.adapters.base import LLMAdapter
+from creator.gepa.judge import Judge
+from creator.adapters.base import LLMAdapter
 
 
 class GoodAdapter(LLMAdapter):

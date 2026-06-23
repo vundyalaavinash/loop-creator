@@ -1,8 +1,8 @@
-from loop_creator.gepa.engine import GEPAEngine, GenerationEvent, Variant
-from loop_creator.gepa.judge import Judge
-from loop_creator.gepa.scorer import Scorer
-from loop_creator.spec import GEPAParams
-from loop_creator.adapters.base import LLMAdapter
+from creator.gepa.engine import GEPAEngine, GenerationEvent, Variant
+from creator.gepa.judge import Judge
+from creator.gepa.scorer import Scorer
+from creator.spec import GEPAParams
+from creator.adapters.base import LLMAdapter
 
 
 class FakeAdapter(LLMAdapter):

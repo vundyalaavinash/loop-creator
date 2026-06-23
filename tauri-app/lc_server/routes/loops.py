@@ -11,14 +11,14 @@ import yaml
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
-from loop_creator.spec import LoopSpec, load_spec, save_spec
-from loop_creator.runner import run_loop
+from creator.spec import LoopSpec, load_spec, save_spec
+from creator.runner import run_loop
 
 router = APIRouter(prefix="/api/loops")
 
 
 def _loop_dir(loop_id: str) -> Path:
-    return Path.home() / ".loop-creator" / loop_id
+    return Path.home() / ".creator" / "loops" / loop_id
 
 
 @router.post("")
@@ -31,7 +31,7 @@ def create_loop(spec: LoopSpec):
 
 @router.get("")
 def list_loops():
-    base = Path.home() / ".loop-creator"
+    base = Path.home() / ".creator" / "loops"
     if not base.exists():
         return []
     result = []

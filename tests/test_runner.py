@@ -1,8 +1,8 @@
 from unittest.mock import patch, MagicMock
-from loop_creator.runner import build_adapter, detect_available_adapters
-from loop_creator.adapters.claude import ClaudeAdapter
-from loop_creator.adapters.ollama import OllamaAdapter
-from loop_creator.adapters.devin import DevinAdapter
+from creator.runner import build_adapter, detect_available_adapters
+from creator.adapters.claude import ClaudeAdapter
+from creator.adapters.ollama import OllamaAdapter
+from creator.adapters.devin import DevinAdapter
 
 
 def test_build_adapter_claude():
@@ -28,9 +28,9 @@ def test_build_adapter_unknown_raises():
 
 
 def test_detect_available_adapters_returns_list():
-    with patch("loop_creator.adapters.claude.shutil.which", return_value="/bin/claude"), \
-         patch("loop_creator.adapters.ollama.httpx.get", side_effect=Exception()), \
-         patch("loop_creator.adapters.devin.DevinAdapter.is_available", return_value=False):
+    with patch("creator.adapters.claude.shutil.which", return_value="/bin/claude"), \
+         patch("creator.adapters.ollama.httpx.get", side_effect=Exception()), \
+         patch("creator.adapters.devin.DevinAdapter.is_available", return_value=False):
         result = detect_available_adapters()
     assert isinstance(result, list)
     assert "claude" in result

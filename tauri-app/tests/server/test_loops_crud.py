@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 def _make_loop(tmp_path, loop_id="myloop"):
-    d = tmp_path / ".loop-creator" / loop_id
+    d = tmp_path / ".creator" / "loops" / loop_id
     d.mkdir(parents=True, exist_ok=True)
     spec = {
         "id": loop_id, "type": "coding", "task": "write tests",
@@ -26,7 +26,7 @@ def test_create_loop(client, tmp_path):
     r = client.post("/api/loops", json=payload)
     assert r.status_code == 200
     assert r.json()["id"] == "newloop"
-    loop_dir = tmp_path / ".loop-creator" / "newloop"
+    loop_dir = tmp_path / ".creator" / "loops" / "newloop"
     assert (loop_dir / "spec.yaml").exists()
 
 
@@ -51,4 +51,4 @@ def test_delete_loop(client, tmp_path):
     _make_loop(tmp_path, "deleteme")
     r = client.delete("/api/loops/deleteme")
     assert r.status_code == 200
-    assert not (tmp_path / ".loop-creator" / "deleteme").exists()
+    assert not (tmp_path / ".creator" / "loops" / "deleteme").exists()
