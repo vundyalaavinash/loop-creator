@@ -5,9 +5,11 @@ export function useTranscribe() {
   const [isRecording, setIsRecording] = useState(false);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const startRecording = useCallback(async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    streamRef.current = stream;
     const recorder = new MediaRecorder(stream);
     chunksRef.current = [];
     recorder.ondataavailable = (e) => chunksRef.current.push(e.data);
@@ -22,6 +24,8 @@ export function useTranscribe() {
       if (!recorder) { reject(new Error("Not recording")); return; }
       recorder.onstop = async () => {
         setIsRecording(false);
+        streamRef.current?.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
         const blob = new Blob(chunksRef.current, { type: "audio/wav" });
         const formData = new FormData();
         formData.append("audio", blob, "audio.wav");
@@ -30,6 +34,7 @@ export function useTranscribe() {
             method: "POST",
             body: formData,
           });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const data = await res.json();
           resolve(data.text as string);
         } catch (e) {

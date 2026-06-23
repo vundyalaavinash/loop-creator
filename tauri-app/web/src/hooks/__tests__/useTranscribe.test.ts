@@ -15,14 +15,17 @@ test("stopAndTranscribe posts audio and returns text", async () => {
     ondataavailable: null as any,
     onstop: null as any,
   };
+  const mockStream = {
+    getTracks: vi.fn(() => [{ stop: vi.fn() }]),
+  };
   (global as any).MediaRecorder = vi.fn(() => mockMediaRecorder);
   (global as any).navigator = {
-    mediaDevices: { getUserMedia: vi.fn().mockResolvedValue({}) },
+    mediaDevices: { getUserMedia: vi.fn().mockResolvedValue(mockStream) },
   };
 
   const { result } = renderHook(() => useTranscribe());
 
-  await act(async () => { result.current.startRecording(); });
+  await act(async () => { await result.current.startRecording(); });
   mockMediaRecorder.ondataavailable?.({ data: new Blob(["audio"]) } as any);
 
   const textPromise = result.current.stopAndTranscribe();
