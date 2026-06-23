@@ -3,7 +3,10 @@ import { NavLink } from "react-router-dom";
 const NAV = [
   { to: "/loops", label: "Loops", icon: "⟳" },
   { to: "/new", label: "New Loop", icon: "+" },
+  { to: "/skills", label: "Skills", icon: "◈" },
+  { to: "/prompts", label: "Prompts", icon: "◉" },
   { to: "/files", label: "Files", icon: "◫" },
+  { to: "/settings", label: "Settings", icon: "⚙" },
 ];
 
 export function Sidebar() {
@@ -33,7 +36,7 @@ export function Sidebar() {
         ))}
       </nav>
       <div className="px-5 py-3 border-t border-border-color">
-        <span className="text-xs text-muted font-mono">SP2 v0.1.0</span>
+        <span className="text-xs text-muted font-mono">SP3 v0.1.0</span>
       </div>
     </aside>
   );
