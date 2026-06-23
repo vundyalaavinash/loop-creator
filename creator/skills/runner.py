@@ -16,7 +16,7 @@ def run_skill(spec: SkillSpec, skill_dir: Path, on_event=None) -> Variant:
     generator = build_adapter(spec.generator.cli, spec.generator.model)
     judge_adapter = build_adapter(spec.judge.cli, spec.judge.model)
 
-    rubric = get_rubric(spec.category) or spec.judge.rubric or ""
+    eval_goal = get_rubric(spec.category) or spec.judge.rubric or spec.description_goal
     judge = Judge(adapter=judge_adapter)
 
     params = GEPAParams(
@@ -35,7 +35,7 @@ def run_skill(spec: SkillSpec, skill_dir: Path, on_event=None) -> Variant:
         system_prompt=SEED_SYSTEM_SKILL,
     )
 
-    for event in engine.run(task=spec.description_goal, goal=rubric or spec.description_goal):
+    for event in engine.run(task=spec.description_goal, goal=eval_goal):
         if on_event:
             on_event(event)
 

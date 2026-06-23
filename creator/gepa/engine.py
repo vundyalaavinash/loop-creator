@@ -50,7 +50,7 @@ class GEPAEngine:
         seed_variants = []
         for i in range(self.params.population_size):
             prompt = f"Task: {task}{ctx_block}"
-            output = self.generator.call(self.system_prompt,prompt)
+            output = self.generator.call(self.system_prompt, prompt)
             score, reason = self.judge.score(output, goal)
             v = Variant(prompt=prompt, output=output, score=score, reason=reason, generation=0)
             seed_variants.append(v)
@@ -81,7 +81,7 @@ class GEPAEngine:
                     new_prompt = mutate(self.generator, combined, "crossover", context=context)
                 else:
                     new_prompt = mutate(self.generator, parent.prompt, op, context=context)
-                output = self.generator.call(self.system_prompt,new_prompt)
+                output = self.generator.call(self.system_prompt, new_prompt)
                 score, reason = self.judge.score(output, goal)
                 v = Variant(prompt=new_prompt, output=output, score=score,
                             reason=reason, generation=gen)
