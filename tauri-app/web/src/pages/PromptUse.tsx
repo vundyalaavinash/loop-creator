@@ -9,24 +9,32 @@ export function PromptUse() {
   const [spec, setSpec] = useState<PromptSpec | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
   const [resolved, setResolved] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`http://localhost:${port()}/api/prompts/${name}`)
+    const controller = new AbortController();
+    fetch(`http://localhost:${port()}/api/prompts/${name}`, { signal: controller.signal })
       .then(r => r.json())
       .then((s: PromptSpec) => {
         setSpec(s);
         setValues(Object.fromEntries(s.variables.map(v => [v, ""])));
       });
+    return () => controller.abort();
   }, [name]);
 
   const fill = async () => {
-    const res = await fetch(`http://localhost:${port()}/api/prompts/${name}/use`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ variables: values }),
-    });
-    const data = await res.json();
-    setResolved(data.resolved);
+    setError(null);
+    try {
+      const res = await fetch(`http://localhost:${port()}/api/prompts/${name}/use`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ variables: values }),
+      });
+      const data = await res.json();
+      setResolved(data.resolved);
+    } catch (err: any) {
+      setError(err?.message ?? "Failed to fill prompt");
+    }
   };
 
   if (!spec) return <div style={{ padding: 24, color: "#8A8A8A" }}>Loading…</div>;
@@ -53,6 +61,7 @@ export function PromptUse() {
           padding: "10px 24px", fontWeight: 700, cursor: "pointer", fontSize: 15, marginBottom: 24 }}>
         Fill Prompt
       </button>
+      {error && <p style={{ color: "#FF6B6B" }}>{error}</p>}
       {resolved && (
         <div style={{ background: "#2E2E2E", border: "1px solid #383838", borderRadius: 8, padding: 16 }}>
           <p style={{ color: "#8A8A8A", margin: "0 0 8px", fontSize: 12 }}>RESOLVED PROMPT</p>
