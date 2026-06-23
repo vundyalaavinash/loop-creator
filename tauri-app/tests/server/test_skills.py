@@ -89,7 +89,9 @@ def test_publish_skill(client, tmp_path):
     d = _make_skill(tmp_path)
     (d / "SKILL.md").write_text("# myskill\n")
     claude_skills = tmp_path / ".claude" / "skills"
-    with patch("creator.skills.registry._claude_skills_base", return_value=claude_skills):
+    with patch("creator.skills.registry._claude_skills_base", new=lambda: claude_skills):
         r = client.post("/api/skills/myskill/publish")
     assert r.status_code == 200
     assert "dest" in r.json()
+    # Actually verify the file was published to the right place
+    assert (claude_skills / "myskill" / "SKILL.md").exists()
