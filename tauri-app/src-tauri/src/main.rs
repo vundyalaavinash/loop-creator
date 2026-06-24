@@ -4,7 +4,7 @@ use std::net::TcpListener;
 use std::process::{Child, Command};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
-use tauri::webview::PageLoadPayload;
+use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 
 struct SidecarState(Mutex<Option<Child>>);
 
@@ -52,17 +52,19 @@ fn main() {
                 eprintln!("loop_creator_server did not start in time");
             }
 
-            let window = app.get_webview_window("main").unwrap();
-
-            // Inject port before page loads — timing-safe alternative to on_page_load eval
-            window.add_initialization_script(&format!("window.__LC_PORT__ = {};", port))
-                .unwrap_or_else(|e| eprintln!("init script error: {e}"));
-
-            let port_val = port; // capture port for closure
-            window.on_page_load(move |win, _: PageLoadPayload| {
-                let _ = win.eval(&format!("window.__LC_PORT__ = {}", port_val));
-            });
-            window.show().unwrap();
+            // Build window programmatically so we can inject __LC_PORT__ before
+            // the page executes any JS — WebviewWindowBuilder::initialization_script
+            // runs before any page content loads, avoiding the timing issues that
+            // window.eval() after load would have.
+            WebviewWindowBuilder::new(
+                app,
+                "main",
+                WebviewUrl::App("index.html".into()),
+            )
+            .title("Loop Creator")
+            .inner_size(1280.0, 840.0)
+            .initialization_script(&format!("window.__LC_PORT__ = {};", port))
+            .build()?;
 
             Ok(())
         })
