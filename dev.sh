@@ -45,6 +45,30 @@ _check_deps() {
   exit 1
 }
 
+# Kill any process occupying a port that isn't one we own.
+# This prevents another project's dev server from hijacking our port.
+_clear_port() {
+  local port="$1" our_pid_file="${2:-}"
+  local pids
+  pids=$(lsof -ti :"$port" 2>/dev/null || true)
+  [[ -z "$pids" ]] && return
+
+  # If the only process holding this port is our own tracked one, leave it.
+  if [[ -n "$our_pid_file" && -f "$our_pid_file" ]]; then
+    local our_pid; our_pid=$(cat "$our_pid_file")
+    if [[ "$pids" == "$our_pid" ]]; then
+      return
+    fi
+  fi
+
+  for pid in $pids; do
+    local cmd; cmd=$(ps -p "$pid" -o comm= 2>/dev/null || echo "unknown")
+    _warn "Port $port occupied by PID $pid ($cmd) — killing it"
+    kill "$pid" 2>/dev/null || true
+  done
+  sleep 0.3
+}
+
 # Source rustup's env — fixes PATH when Rust is installed but the current
 # shell hasn't been restarted since installation.
 _load_cargo_env() {
@@ -107,6 +131,7 @@ _start_server() {
     _warn "API server already running (pid $(cat "$SERVER_PID"))"
     return
   fi
+  _clear_port 5001 "$SERVER_PID"
   _info "Starting API server on :5001"
   cd "$ROOT/tauri-app"
   python3 run_server.py --port 5001 >"$SERVER_LOG" 2>&1 &
@@ -120,6 +145,7 @@ _start_web() {
     _warn "Vite dev server already running (pid $(cat "$WEB_PID"))"
     return
   fi
+  _clear_port 5173 "$WEB_PID"
   _info "Starting Vite dev server on :5173"
   cd "$ROOT/tauri-app/web"
   npm run dev >"$WEB_LOG" 2>&1 &
@@ -148,6 +174,7 @@ cmd_tauri() {
   _check_deps
   _ensure_rust    # installs Rust + tauri-cli if missing
   _ensure_stub    # creates stub binary if missing
+  _clear_port 5173  # evict any foreign app occupying our Vite port
   _start_server   # API server in background (Tauri doesn't manage this)
   echo ""
   _info "Launching Tauri — Vite will start automatically, then the app window opens."
