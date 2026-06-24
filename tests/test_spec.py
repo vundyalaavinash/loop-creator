@@ -1,5 +1,5 @@
 import tempfile, os, yaml, pytest
-from loop_creator.spec import LoopSpec, GeneratorSpec, JudgeSpec, ContextSpec, GEPAParams, load_spec, save_spec
+from creator.spec import LoopSpec, GeneratorSpec, JudgeSpec, ContextSpec, GEPAParams, load_spec, save_spec
 
 
 MINIMAL_YAML = """

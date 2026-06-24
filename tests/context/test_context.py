@@ -1,8 +1,8 @@
 import json, os, tempfile
-from loop_creator.context.project import scrape_project
-from loop_creator.context.history import append_history, load_history_summary
-from loop_creator.context.external import load_external
-from loop_creator.context.bundle import build_bundle
+from creator.context.project import scrape_project
+from creator.context.history import append_history, load_history_summary
+from creator.context.external import load_external
+from creator.context.bundle import build_bundle
 
 
 def test_scrape_project_returns_string(tmp_path):

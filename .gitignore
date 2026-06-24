@@ -17,3 +17,7 @@ tauri-app/.venv-build/
 tauri-app/web/node_modules/
 tauri-app/web/dist/
 tauri-app/src-tauri/target/
+
+# dev.sh runtime files
+.pids/
+.logs/

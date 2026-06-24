@@ -3,9 +3,10 @@ import { ScoreBar } from "./ScoreBar";
 
 interface Props {
   bestVariant: Variant | null;
+  outputUrl?: string;
 }
 
-export function ResultsPanel({ bestVariant }: Props) {
+export function ResultsPanel({ bestVariant, outputUrl }: Props) {
   if (!bestVariant) return null;
 
   return (

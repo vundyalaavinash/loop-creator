@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
-from loop_creator.gepa.scorer import Scorer
-from loop_creator.adapters.base import LLMAdapter
+from creator.gepa.scorer import Scorer
+from creator.adapters.base import LLMAdapter
 
 
 class MockAdapter(LLMAdapter):

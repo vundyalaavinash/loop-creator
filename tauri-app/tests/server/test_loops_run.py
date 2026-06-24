@@ -2,7 +2,7 @@ import yaml
 import pytest
 from unittest.mock import patch
 from pathlib import Path
-from loop_creator.gepa.engine import GenerationEvent, Variant
+from creator.gepa.engine import GenerationEvent, Variant
 
 
 def _fake_variant():
@@ -20,7 +20,7 @@ def _fake_run_loop(spec, loop_dir, on_event=None):
 
 
 def _make_loop(tmp_path, loop_id="runme"):
-    d = tmp_path / ".loop-creator" / loop_id
+    d = tmp_path / ".creator" / "loops" / loop_id
     d.mkdir(parents=True, exist_ok=True)
     spec = {
         "id": loop_id, "type": "coding", "task": "t", "goal": "g",
