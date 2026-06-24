@@ -21,7 +21,7 @@ _err() { echo -e "${RED}✗${RESET}  $*"; }
 
 mkdir -p "$PID_DIR" "$LOG_DIR"
 
-# ── helpers ──────────────────────────────────────────────────────────────────
+# ── helpers ───────────────────────────────────────────────────────────────────
 
 _is_running() {
   local pid_file="$1"
@@ -32,6 +32,8 @@ _kill_pid() {
   local pid_file="$1" label="$2"
   if _is_running "$pid_file"; then
     kill "$(cat "$pid_file")" 2>/dev/null && _ok "Stopped $label"
+  else
+    _info "$label not running"
   fi
   rm -f "$pid_file"
 }
@@ -45,11 +47,64 @@ _check_deps() {
   exit 1
 }
 
-# ── start/stop individual services ───────────────────────────────────────────
+# Source rustup's env file if present — this fixes PATH in the current process
+# even when the user's shell profile hasn't been reloaded since installing Rust.
+_load_cargo_env() {
+  local env_file="$HOME/.cargo/env"
+  if [[ -f "$env_file" ]]; then
+    # shellcheck source=/dev/null
+    source "$env_file"
+  fi
+}
+
+_ensure_rust() {
+  # First, try to pick up an existing Rust install from ~/.cargo/env
+  _load_cargo_env
+
+  if command -v cargo &>/dev/null; then
+    _ensure_tauri_cli
+    return
+  fi
+
+  # Rust not found anywhere — install it non-interactively via rustup
+  _info "Rust not found — installing via rustup (this takes ~2 min)…"
+  if ! command -v curl &>/dev/null; then
+    _err "curl is required to install Rust. Install curl first."
+    exit 1
+  fi
+
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+    | sh -s -- -y --no-modify-path
+
+  # Load the env that rustup just wrote
+  _load_cargo_env
+
+  if ! command -v cargo &>/dev/null; then
+    _err "rustup install succeeded but cargo is still not in PATH."
+    _err "Open a new terminal and re-run: ./dev.sh tauri"
+    exit 1
+  fi
+
+  _ok "Rust installed ($(cargo --version))"
+  _ensure_tauri_cli
+}
+
+_ensure_tauri_cli() {
+  # `cargo tauri` is a subcommand — check it's installed
+  if cargo tauri --version &>/dev/null 2>&1; then
+    return
+  fi
+
+  _info "Installing tauri-cli (this takes ~3 min on first run)…"
+  cargo install tauri-cli --version "^2" --locked
+  _ok "tauri-cli installed"
+}
+
+# ── services ──────────────────────────────────────────────────────────────────
 
 _start_server() {
   if _is_running "$SERVER_PID"; then
-    _warn "Server already running (pid $(cat "$SERVER_PID"))"
+    _warn "API server already running (pid $(cat "$SERVER_PID"))"
     return
   fi
   _info "Starting API server on :5001"
@@ -62,7 +117,7 @@ _start_server() {
 
 _start_web() {
   if _is_running "$WEB_PID"; then
-    _warn "Web dev server already running (pid $(cat "$WEB_PID"))"
+    _warn "Vite dev server already running (pid $(cat "$WEB_PID"))"
     return
   fi
   _info "Starting Vite dev server on :5173"
@@ -78,7 +133,7 @@ _start_tauri() {
     _warn "Tauri dev already running (pid $(cat "$TAURI_PID"))"
     return
   fi
-  command -v cargo &>/dev/null || { _err "cargo not found — install Rust first"; exit 1; }
+  _ensure_rust
   _info "Starting Tauri dev shell"
   cd "$ROOT/tauri-app"
   cargo tauri dev >"$TAURI_LOG" 2>&1 &
@@ -93,17 +148,7 @@ _stop_all() {
   _kill_pid "$SERVER_PID" "API server"
 }
 
-_kill_pid() {
-  local pid_file="$1" label="$2"
-  if _is_running "$pid_file"; then
-    kill "$(cat "$pid_file")" 2>/dev/null && _ok "Stopped $label"
-  else
-    _info "$label not running"
-  fi
-  rm -f "$pid_file"
-}
-
-# ── commands ─────────────────────────────────────────────────────────────────
+# ── commands ──────────────────────────────────────────────────────────────────
 
 cmd_start() {
   _check_deps
@@ -171,6 +216,7 @@ cmd_help() {
     restart       Stop everything, then start
     stop          Stop all running processes
     tauri         Start API + Vite + Tauri native shell
+                  (installs Rust and tauri-cli automatically if missing)
     status        Show what is running
     logs [target] Tail logs — server | web | tauri | all (default: all)
     help          Show this message
@@ -181,7 +227,7 @@ cmd_help() {
 EOF
 }
 
-# ── dispatch ─────────────────────────────────────────────────────────────────
+# ── dispatch ──────────────────────────────────────────────────────────────────
 
 case "${1:-help}" in
   start)   cmd_start ;;
