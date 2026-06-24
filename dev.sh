@@ -7,10 +7,8 @@ LOG_DIR="$ROOT/.logs"
 
 SERVER_PID="$PID_DIR/server.pid"
 WEB_PID="$PID_DIR/web.pid"
-TAURI_PID="$PID_DIR/tauri.pid"
 SERVER_LOG="$LOG_DIR/server.log"
 WEB_LOG="$LOG_DIR/web.log"
-TAURI_LOG="$LOG_DIR/tauri.log"
 
 GREEN="\033[32m"; YELLOW="\033[33m"; RED="\033[31m"; DIM="\033[2m"; RESET="\033[0m"
 
@@ -47,57 +45,59 @@ _check_deps() {
   exit 1
 }
 
-# Source rustup's env file if present — this fixes PATH in the current process
-# even when the user's shell profile hasn't been reloaded since installing Rust.
+# Source rustup's env — fixes PATH when Rust is installed but the current
+# shell hasn't been restarted since installation.
 _load_cargo_env() {
-  local env_file="$HOME/.cargo/env"
-  if [[ -f "$env_file" ]]; then
-    # shellcheck source=/dev/null
-    source "$env_file"
-  fi
+  [[ -f "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
 }
 
 _ensure_rust() {
-  # First, try to pick up an existing Rust install from ~/.cargo/env
   _load_cargo_env
-
   if command -v cargo &>/dev/null; then
     _ensure_tauri_cli
     return
   fi
-
-  # Rust not found anywhere — install it non-interactively via rustup
-  _info "Rust not found — installing via rustup (this takes ~2 min)…"
-  if ! command -v curl &>/dev/null; then
-    _err "curl is required to install Rust. Install curl first."
-    exit 1
-  fi
-
+  command -v curl &>/dev/null || { _err "curl required to install Rust"; exit 1; }
+  _info "Rust not found — installing via rustup (~2 min)…"
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
     | sh -s -- -y --no-modify-path
-
-  # Load the env that rustup just wrote
   _load_cargo_env
-
-  if ! command -v cargo &>/dev/null; then
-    _err "rustup install succeeded but cargo is still not in PATH."
-    _err "Open a new terminal and re-run: ./dev.sh tauri"
+  command -v cargo &>/dev/null || {
+    _err "cargo still not found after install — open a new terminal and retry"
     exit 1
-  fi
-
+  }
   _ok "Rust installed ($(cargo --version))"
   _ensure_tauri_cli
 }
 
 _ensure_tauri_cli() {
-  # `cargo tauri` is a subcommand — check it's installed
-  if cargo tauri --version &>/dev/null 2>&1; then
-    return
-  fi
-
-  _info "Installing tauri-cli (this takes ~3 min on first run)…"
+  cargo tauri --version &>/dev/null 2>&1 && return
+  _info "Installing tauri-cli (~3 min on first run)…"
   cargo install tauri-cli --version "^2" --locked
   _ok "tauri-cli installed"
+}
+
+# Create a shell-script stub at the path Tauri's build script requires.
+# In dev mode the Rust binary launches this stub, which delegates to the
+# Python server. In production, scripts/build.sh replaces it with the real
+# PyInstaller bundle.
+_ensure_stub() {
+  local arch
+  arch=$(uname -m | sed 's/arm64/aarch64/')
+  local stub="$ROOT/tauri-app/src-tauri/binaries/loop_creator_server-${arch}-apple-darwin"
+  mkdir -p "$(dirname "$stub")"
+  [[ -x "$stub" ]] && return
+
+  cat > "$stub" <<'STUB'
+#!/usr/bin/env bash
+# Dev stub — delegates to the Python server.
+# Replaced by the real binary when running: bash tauri-app/scripts/build.sh
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+exec python3 "$SCRIPT_DIR/../../../run_server.py" "$@"
+STUB
+  chmod +x "$stub"
+  _ok "Created dev stub: src-tauri/binaries/$(basename "$stub")"
+  _warn "For production use scripts/build.sh to replace this with a real binary."
 }
 
 # ── services ──────────────────────────────────────────────────────────────────
@@ -128,22 +128,7 @@ _start_web() {
   _ok "Vite dev server started  (log: .logs/web.log)"
 }
 
-_start_tauri() {
-  if _is_running "$TAURI_PID"; then
-    _warn "Tauri dev already running (pid $(cat "$TAURI_PID"))"
-    return
-  fi
-  _ensure_rust
-  _info "Starting Tauri dev shell"
-  cd "$ROOT/tauri-app"
-  cargo tauri dev >"$TAURI_LOG" 2>&1 &
-  echo $! > "$TAURI_PID"
-  cd "$ROOT"
-  _ok "Tauri dev started  (log: .logs/tauri.log)"
-}
-
 _stop_all() {
-  _kill_pid "$TAURI_PID"  "Tauri dev"
   _kill_pid "$WEB_PID"    "Vite dev server"
   _kill_pid "$SERVER_PID" "API server"
 }
@@ -161,9 +146,17 @@ cmd_start() {
 
 cmd_tauri() {
   _check_deps
-  _start_server
-  _start_web
-  _start_tauri
+  _ensure_rust    # installs Rust + tauri-cli if missing
+  _ensure_stub    # creates stub binary if missing
+  _start_server   # API server in background (Tauri doesn't manage this)
+  echo ""
+  _info "Launching Tauri — Vite will start automatically, then the app window opens."
+  _info "Press Ctrl+C to stop."
+  echo ""
+  # Run in the foreground so build output is visible.
+  # cargo tauri dev starts Vite itself via beforeDevCommand in tauri.conf.json.
+  cd "$ROOT/tauri-app"
+  cargo tauri dev
 }
 
 cmd_stop() {
@@ -182,17 +175,14 @@ cmd_restart() {
 }
 
 cmd_status() {
-  local any=false
-  for pair in "API server:$SERVER_PID" "Vite dev:$WEB_PID" "Tauri dev:$TAURI_PID"; do
+  for pair in "API server:$SERVER_PID" "Vite dev:$WEB_PID"; do
     local label="${pair%%:*}" pid_file="${pair#*:}"
     if _is_running "$pid_file"; then
       _ok "$label  (pid $(cat "$pid_file"))"
-      any=true
     else
       _info "$label  not running"
     fi
   done
-  $any || echo ""
 }
 
 cmd_logs() {
@@ -200,9 +190,8 @@ cmd_logs() {
   case "$target" in
     server) tail -f "$SERVER_LOG" ;;
     web)    tail -f "$WEB_LOG" ;;
-    tauri)  tail -f "$TAURI_LOG" ;;
     all)    tail -f "$SERVER_LOG" "$WEB_LOG" 2>/dev/null || tail -f "$SERVER_LOG" ;;
-    *)      _err "Unknown log target: $target (server|web|tauri|all)"; exit 1 ;;
+    *)      _err "Unknown log target: $target (server|web|all)"; exit 1 ;;
   esac
 }
 
@@ -212,17 +201,14 @@ cmd_help() {
   Usage: ./dev.sh <command> [options]
 
   Commands:
-    start         Start API server + Vite dev server (browser mode)
+    start         Start API server + Vite in background (open http://localhost:5173)
     restart       Stop everything, then start
-    stop          Stop all running processes
-    tauri         Start API + Vite + Tauri native shell
-                  (installs Rust and tauri-cli automatically if missing)
+    stop          Stop background processes
+    tauri         Build and open the native macOS app
+                  (auto-installs Rust, tauri-cli, and stub binary if needed)
     status        Show what is running
-    logs [target] Tail logs — server | web | tauri | all (default: all)
+    logs [target] Tail logs — server | web | all (default: all)
     help          Show this message
-
-  After start, open http://localhost:5173 in a browser.
-  For the native macOS app, use: ./dev.sh tauri
 
 EOF
 }
