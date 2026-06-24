@@ -9,6 +9,6 @@ test("renders all nav items", () => {
     </MemoryRouter>
   );
   expect(screen.getByText("Loops")).toBeInTheDocument();
-  expect(screen.getByText("New Loop")).toBeInTheDocument();
+  expect(screen.getByText("Skills")).toBeInTheDocument();
   expect(screen.getByText("Files")).toBeInTheDocument();
 });

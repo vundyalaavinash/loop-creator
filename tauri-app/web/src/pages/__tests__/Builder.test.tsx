@@ -5,7 +5,7 @@ import { Builder } from "../Builder";
 (window as any).__LC_PORT__ = 5001;
 global.fetch = vi.fn().mockResolvedValue({ json: async () => [] } as any);
 
-test("renders all 7 form sections", () => {
+test("renders all form sections", () => {
   render(<MemoryRouter><Builder /></MemoryRouter>);
   expect(screen.getByText(/Loop Type/i)).toBeInTheDocument();
   expect(screen.getAllByText(/Task/i)[0]).toBeInTheDocument();
@@ -13,7 +13,7 @@ test("renders all 7 form sections", () => {
   expect(screen.getAllByText(/Context/i)[0]).toBeInTheDocument();
   expect(screen.getAllByText(/Generator/i)[0]).toBeInTheDocument();
   expect(screen.getByText(/GEPA Params/i)).toBeInTheDocument();
-  expect(screen.getByText(/Preview/i)).toBeInTheDocument();
+  expect(screen.getAllByText(/Judge/i)[0]).toBeInTheDocument();
 });
 
 test("Save button is present", () => {

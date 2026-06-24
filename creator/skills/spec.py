@@ -3,6 +3,12 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 from creator.spec import GeneratorSpec, JudgeSpec
 
+
+class ArtifactContext(BaseModel):
+    project_root: str = ""
+    include_files: list[str] = Field(default_factory=list)
+
+
 SKILL_CATEGORIES = ["code-review", "testing", "documentation", "devops", "data-analysis", "custom"]
 
 SKILL_RUBRICS: dict[str, str] = {
@@ -49,6 +55,7 @@ class SkillSpec(BaseModel):
     generator: GeneratorSpec = Field(default_factory=GeneratorSpec)
     judge: JudgeSpec = Field(default_factory=JudgeSpec)
     gepa: SkillGEPAParams = Field(default_factory=SkillGEPAParams)
+    context: ArtifactContext = Field(default_factory=ArtifactContext)
 
     @field_validator("name")
     @classmethod

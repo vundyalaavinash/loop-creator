@@ -93,3 +93,7 @@ export interface AppConfig {
   whisper_model: string;
   openai_api_key: string;
 }
+
+export interface LoopTemplate { id: string; name: string; description: string; loop_type: string; task: string; goal: string; generator_cli: string; judge_cli: string; }
+export interface SkillTemplate { id: string; name: string; description: string; category: string; description_goal: string; generator_cli: string; judge_cli: string; }
+export interface PromptTemplate { id: string; name: string; description: string; description_goal: string; variables: string[]; generator_cli: string; judge_cli: string; }

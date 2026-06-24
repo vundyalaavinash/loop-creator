@@ -1,35 +1,79 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getBaseUrl } from "../types";
+import { PromptTemplate, getBaseUrl } from "../types";
+
+const CLI_OPTIONS = ["claude", "ollama", "devin"];
+
+const S = {
+  label: { display: "block" as const, color: "#8A8A8A", marginBottom: 4, fontSize: 12, fontFamily: "monospace", textTransform: "uppercase" as const, letterSpacing: 1 },
+  input: { width: "100%", background: "#2E2E2E", border: "1px solid #383838", borderRadius: 6, color: "#F0F0F0", padding: "8px 12px", fontSize: 14, fontFamily: "monospace", boxSizing: "border-box" as const },
+  textarea: { width: "100%", background: "#2E2E2E", border: "1px solid #383838", borderRadius: 6, color: "#F0F0F0", padding: "8px 12px", fontSize: 14, fontFamily: "monospace", resize: "vertical" as const, boxSizing: "border-box" as const },
+  section: { background: "#242424", border: "1px solid #383838", borderRadius: 8, padding: 16, marginBottom: 16 },
+  chip: (active: boolean) => ({
+    padding: "6px 14px", borderRadius: 6, border: `1px solid ${active ? "#01C7B1" : "#383838"}`,
+    color: active ? "#01C7B1" : "#8A8A8A", background: active ? "#2E2E2E" : "transparent",
+    cursor: "pointer" as const, fontSize: 12, fontFamily: "monospace",
+  }),
+  btnPrimary: { background: "#01C7B1", color: "#1C1C1C", border: "none", borderRadius: 6, padding: "10px 24px", fontWeight: 700, cursor: "pointer" as const, fontSize: 14, fontFamily: "monospace" },
+  btnSecondary: { background: "#2E2E2E", color: "#F0F0F0", border: "1px solid #383838", borderRadius: 6, padding: "10px 24px", fontWeight: 600, cursor: "pointer" as const, fontSize: 14, fontFamily: "monospace" },
+};
 
 export function PromptBuilder() {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "", description_goal: "", variables: "",
-    generator_cli: "claude", judge_cli: "claude",
+    generator_cli: "claude", generator_model: "",
+    judge_cli: "claude",
+    project_root: "", include_files: "",
   });
   const [error, setError] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<PromptTemplate[]>([]);
 
   useEffect(() => {
+    fetch(`${getBaseUrl()}/api/templates/prompts`)
+      .then(r => r.json())
+      .then(setTemplates)
+      .catch(() => {});
+
     if (name) {
       fetch(`${getBaseUrl()}/api/prompts/${name}`)
         .then(r => r.json())
-        .then(spec => setForm({
+        .then(spec => setForm(f => ({
+          ...f,
           name: spec.name, description_goal: spec.description_goal,
-          variables: spec.variables.join(", "),
-          generator_cli: spec.generator.cli, judge_cli: spec.judge.cli,
-        }));
+          variables: (spec.variables ?? []).join(", "),
+          generator_cli: spec.generator?.cli ?? "claude",
+          generator_model: spec.generator?.model ?? "",
+          judge_cli: spec.judge?.cli ?? "claude",
+          project_root: spec.context?.project_root ?? "",
+          include_files: (spec.context?.include_files ?? []).join(", "),
+        })));
     }
   }, [name]);
+
+  function applyTemplate(t: PromptTemplate) {
+    setForm(f => ({
+      ...f,
+      description_goal: t.description_goal,
+      variables: t.variables.join(", "),
+      generator_cli: t.generator_cli,
+      judge_cli: t.judge_cli,
+    }));
+  }
 
   const save = async () => {
     setError(null);
     const payload = {
-      name: form.name, description_goal: form.description_goal,
-      variables: form.variables.split(",").map((v: string) => v.trim()).filter(Boolean),
-      generator: { cli: form.generator_cli, model: "" },
+      name: form.name,
+      description_goal: form.description_goal,
+      variables: form.variables.split(",").map((s: string) => s.trim()).filter(Boolean),
+      generator: { cli: form.generator_cli, model: form.generator_model },
       judge: { cli: form.judge_cli, rubric: "", model: "" },
+      context: {
+        project_root: form.project_root,
+        include_files: form.include_files.split(",").map((s: string) => s.trim()).filter(Boolean),
+      },
     };
     const res = await fetch(`${getBaseUrl()}/api/prompts`, {
       method: "POST",
@@ -44,35 +88,92 @@ export function PromptBuilder() {
     navigate("/prompts");
   };
 
-  const inp = (label: string, id: string, value: string, onChange: (v: string) => void, multi = false) => (
-    <div style={{ marginBottom: 16 }}>
-      <label htmlFor={id} style={{ display: "block", color: "#8A8A8A", marginBottom: 4, fontSize: 13 }}>
-        {label}
-      </label>
-      {multi ? (
-        <textarea id={id} value={value} onChange={e => onChange(e.target.value)} rows={4}
-          style={{ width: "100%", background: "#2E2E2E", border: "1px solid #383838", borderRadius: 6,
-            color: "#F0F0F0", padding: "8px 12px", fontSize: 14, resize: "vertical" }} />
-      ) : (
-        <input id={id} value={value} onChange={e => onChange(e.target.value)}
-          style={{ width: "100%", background: "#2E2E2E", border: "1px solid #383838", borderRadius: 6,
-            color: "#F0F0F0", padding: "8px 12px", fontSize: 14 }} />
-      )}
-    </div>
-  );
-
   return (
-    <div style={{ padding: 24, maxWidth: 600 }}>
-      <h2 style={{ color: "#F0F0F0", marginBottom: 24 }}>{name ? "Edit Prompt" : "New Prompt"}</h2>
-      {inp("Prompt Name", "prompt-name", form.name, v => setForm(f => ({ ...f, name: v })))}
-      {inp("Description Goal", "description-goal", form.description_goal,
-        v => setForm(f => ({ ...f, description_goal: v })), true)}
-      {inp("Variables (comma-separated)", "variables", form.variables, v => setForm(f => ({ ...f, variables: v })))}
-      <button onClick={save}
-        style={{ background: "#01C7B1", color: "#1C1C1C", border: "none", borderRadius: 6,
-          padding: "10px 24px", fontWeight: 700, cursor: "pointer", fontSize: 15 }}>
-        Save Prompt
-      </button>
+    <div style={{ padding: 24, maxWidth: 640 }}>
+      <h2 style={{ color: "#F0F0F0", fontFamily: "sans-serif", fontWeight: 600, fontSize: 18, marginBottom: 24 }}>
+        {name ? "Edit Prompt" : "New Prompt"}
+      </h2>
+
+      {/* Template picker */}
+      {templates.length > 0 && (
+        <div style={{ ...S.section, marginBottom: 24 }}>
+          <span style={S.label}>Start from a template</span>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+            {templates.map(t => (
+              <button key={t.id} style={S.chip(false)} onClick={() => applyTemplate(t)} title={t.description}>
+                {t.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Prompt Name */}
+      <div style={S.section}>
+        <label htmlFor="prompt-name" style={S.label}>Prompt Name</label>
+        <input id="prompt-name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+          style={S.input} />
+      </div>
+
+      {/* Description Goal */}
+      <div style={S.section}>
+        <label htmlFor="description-goal" style={S.label}>Description Goal</label>
+        <textarea id="description-goal" value={form.description_goal}
+          onChange={e => setForm(f => ({ ...f, description_goal: e.target.value }))}
+          rows={4} style={S.textarea} />
+      </div>
+
+      {/* Variables */}
+      <div style={S.section}>
+        <label htmlFor="variables" style={S.label}>Variables (comma-separated)</label>
+        <input id="variables" value={form.variables}
+          onChange={e => setForm(f => ({ ...f, variables: e.target.value }))}
+          style={S.input} placeholder="e.g. language, code, context" />
+      </div>
+
+      {/* Generator CLI */}
+      <div style={S.section}>
+        <label style={S.label}>Generator CLI</label>
+        <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+          {CLI_OPTIONS.map(c => (
+            <button key={c} style={S.chip(form.generator_cli === c)}
+              onClick={() => setForm(f => ({ ...f, generator_cli: c }))}>
+              {c}
+            </button>
+          ))}
+        </div>
+        <input style={S.input} value={form.generator_model}
+          placeholder="model name (optional)"
+          onChange={e => setForm(f => ({ ...f, generator_model: e.target.value }))} />
+      </div>
+
+      {/* Judge CLI */}
+      <div style={S.section}>
+        <label style={S.label}>Judge CLI</label>
+        <div style={{ display: "flex", gap: 8 }}>
+          {CLI_OPTIONS.map(c => (
+            <button key={c} style={S.chip(form.judge_cli === c)}
+              onClick={() => setForm(f => ({ ...f, judge_cli: c }))}>
+              {c}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* File Context */}
+      <div style={S.section}>
+        <label style={S.label}>File Context</label>
+        <label style={{ ...S.label, marginBottom: 4 }}>Project Root</label>
+        <input style={{ ...S.input, marginBottom: 10 }} value={form.project_root}
+          placeholder="/path/to/project (leave blank for CWD)"
+          onChange={e => setForm(f => ({ ...f, project_root: e.target.value }))} />
+        <label style={S.label}>Include Files (comma-separated)</label>
+        <input style={S.input} value={form.include_files}
+          placeholder="src/main.py, lib/utils.py"
+          onChange={e => setForm(f => ({ ...f, include_files: e.target.value }))} />
+      </div>
+
+      <button onClick={save} style={S.btnPrimary}>Save Prompt</button>
       {error && <p style={{ color: "#FF6B6B", marginTop: 12 }}>{error}</p>}
     </div>
   );

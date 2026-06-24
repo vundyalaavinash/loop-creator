@@ -1,6 +1,7 @@
 import re
 from pydantic import BaseModel, Field, field_validator
 from creator.spec import GeneratorSpec, JudgeSpec
+from creator.skills.spec import ArtifactContext
 
 PROMPT_RUBRICS: dict[str, str] = {
     "commit-message": (
@@ -32,6 +33,7 @@ class PromptSpec(BaseModel):
     generator: GeneratorSpec = Field(default_factory=GeneratorSpec)
     judge: JudgeSpec = Field(default_factory=JudgeSpec)
     gepa: PromptGEPAParams = Field(default_factory=PromptGEPAParams)
+    context: ArtifactContext = Field(default_factory=ArtifactContext)
 
     @field_validator("name")
     @classmethod

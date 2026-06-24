@@ -11,6 +11,7 @@ from lc_server.routes import skills as skills_routes
 from lc_server.routes import prompts as prompts_routes
 from lc_server.routes import config as config_routes
 from lc_server.routes import transcribe as transcribe_routes
+from lc_server.routes import templates as templates_routes
 
 
 def create_app() -> FastAPI:
@@ -33,6 +34,7 @@ def create_app() -> FastAPI:
     app.include_router(prompts_routes.router)
     app.include_router(config_routes.router)
     app.include_router(transcribe_routes.router)
+    app.include_router(templates_routes.router)
 
     return app
 
