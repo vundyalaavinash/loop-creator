@@ -8,7 +8,7 @@ test("renders all form fields", () => {
   render(<MemoryRouter><SkillBuilder /></MemoryRouter>);
   expect(screen.getByLabelText(/Skill Name/i)).toBeInTheDocument();
   expect(screen.getByLabelText(/Description Goal/i)).toBeInTheDocument();
-  expect(screen.getByLabelText(/Category/i)).toBeInTheDocument();
+  expect(screen.getByText(/Category/i)).toBeInTheDocument();
 });
 
 test("submits new skill and navigates", async () => {

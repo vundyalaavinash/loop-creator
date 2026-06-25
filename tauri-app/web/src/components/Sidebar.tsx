@@ -13,7 +13,7 @@ export function Sidebar() {
     <aside className="w-52 bg-surface border-r border-border-color flex flex-col h-screen flex-shrink-0">
       <div className="px-5 py-4 border-b border-border-color">
         <span className="text-accent-teal font-mono text-sm font-semibold tracking-widest uppercase">
-          Loop Creator
+          Forge
         </span>
       </div>
       <nav className="flex-1 py-3">

@@ -1,7 +1,7 @@
 {
-  "productName": "Loop Creator",
+  "productName": "Forge",
   "version": "0.1.0",
-  "identifier": "dev.loop-creator.app",
+  "identifier": "dev.forge.app",
   "build": {
     "frontendDist": "../web/dist",
     "devUrl": "http://localhost:5173",

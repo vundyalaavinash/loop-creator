@@ -28,6 +28,7 @@ fn wait_for_server(port: u16, timeout: Duration) -> bool {
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .manage(SidecarState(Mutex::new(None)))
         .setup(|app| {
             let port = find_free_port();
@@ -61,7 +62,7 @@ fn main() {
                 "main",
                 WebviewUrl::App("index.html".into()),
             )
-            .title("Loop Creator")
+            .title("Forge")
             .inner_size(1280.0, 840.0)
             .initialization_script(&format!("window.__LC_PORT__ = {};", port))
             .build()?;

@@ -1,22 +1,24 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { LoopSpec, LoopTemplate, getBaseUrl } from "../types";
+import { pickFolder } from "../utils/dialog";
 
 const LOOP_TYPES = ["coding", "debugging", "docs", "rfc", "design", "prompt", "custom"] as const;
 const CLI_OPTIONS = ["claude", "ollama", "devin"] as const;
 
 const S = {
-  label: { display: "block" as const, color: "#8A8A8A", marginBottom: 4, fontSize: 12, fontFamily: "monospace", textTransform: "uppercase" as const, letterSpacing: 1 },
-  input: { width: "100%", background: "#2E2E2E", border: "1px solid #383838", borderRadius: 6, color: "#F0F0F0", padding: "8px 12px", fontSize: 14, fontFamily: "monospace", boxSizing: "border-box" as const },
-  textarea: { width: "100%", background: "#2E2E2E", border: "1px solid #383838", borderRadius: 6, color: "#F0F0F0", padding: "8px 12px", fontSize: 14, fontFamily: "monospace", resize: "vertical" as const, boxSizing: "border-box" as const },
-  section: { background: "#242424", border: "1px solid #383838", borderRadius: 8, padding: 16, marginBottom: 16 },
+  label: { display: "block" as const, color: "#6B7280", marginBottom: 4, fontSize: 12, fontFamily: "monospace", textTransform: "uppercase" as const, letterSpacing: 1 },
+  input: { width: "100%", background: "#111111", border: "1px solid #1E1E1E", borderRadius: 6, color: "#FFFFFF", padding: "8px 12px", fontSize: 14, fontFamily: "monospace", boxSizing: "border-box" as const },
+  textarea: { width: "100%", background: "#111111", border: "1px solid #1E1E1E", borderRadius: 6, color: "#FFFFFF", padding: "8px 12px", fontSize: 14, fontFamily: "monospace", resize: "vertical" as const, boxSizing: "border-box" as const },
+  section: { background: "#0A0A0A", border: "1px solid #1E1E1E", borderRadius: 8, padding: 16, marginBottom: 16 },
   chip: (active: boolean) => ({
-    padding: "6px 14px", borderRadius: 6, border: `1px solid ${active ? "#01C7B1" : "#383838"}`,
-    color: active ? "#01C7B1" : "#8A8A8A", background: active ? "#2E2E2E" : "transparent",
+    padding: "6px 14px", borderRadius: 6, border: `1px solid ${active ? "#01C7B1" : "#1E1E1E"}`,
+    color: active ? "#01C7B1" : "#6B7280", background: active ? "#111111" : "transparent",
     cursor: "pointer" as const, fontSize: 12, fontFamily: "monospace",
   }),
-  btnPrimary: { background: "#01C7B1", color: "#1C1C1C", border: "none", borderRadius: 6, padding: "10px 24px", fontWeight: 700, cursor: "pointer" as const, fontSize: 14, fontFamily: "monospace" },
-  btnSecondary: { background: "#2E2E2E", color: "#F0F0F0", border: "1px solid #383838", borderRadius: 6, padding: "10px 24px", fontWeight: 600, cursor: "pointer" as const, fontSize: 14, fontFamily: "monospace" },
+  btnPrimary: { background: "#01C7B1", color: "#000000", border: "none", borderRadius: 6, padding: "10px 24px", fontWeight: 700, cursor: "pointer" as const, fontSize: 14, fontFamily: "monospace" },
+  btnSecondary: { background: "#111111", color: "#FFFFFF", border: "1px solid #1E1E1E", borderRadius: 6, padding: "10px 24px", fontWeight: 600, cursor: "pointer" as const, fontSize: 14, fontFamily: "monospace" },
+  btnBrowse: { background: "transparent", color: "#01C7B1", border: "1px solid #1E1E1E", borderRadius: 6, padding: "6px 14px", cursor: "pointer" as const, fontSize: 12, fontFamily: "monospace", whiteSpace: "nowrap" as const },
 };
 
 function defaultSpec(): LoopSpec {
@@ -90,7 +92,7 @@ export function Builder() {
 
   return (
     <div style={{ padding: 24, maxWidth: 640 }}>
-      <h1 style={{ color: "#F0F0F0", fontFamily: "sans-serif", fontWeight: 600, fontSize: 18, marginBottom: 24 }}>
+      <h1 style={{ color: "#FFFFFF", fontFamily: "sans-serif", fontWeight: 600, fontSize: 18, marginBottom: 24 }}>
         {id ? "Edit Loop" : "New Loop"}
       </h1>
 
@@ -148,26 +150,32 @@ export function Builder() {
       {/* 5. Context */}
       <div style={S.section}>
         <label style={S.label}>Context</label>
-        <label style={{ display: "flex", alignItems: "center", gap: 8, color: "#F0F0F0", fontFamily: "monospace", fontSize: 13, marginBottom: 8, cursor: "pointer" }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, color: "#FFFFFF", fontFamily: "monospace", fontSize: 13, marginBottom: 8, cursor: "pointer" }}>
           <input type="checkbox" checked={spec.context.project}
             onChange={(e) => set("context", { ...spec.context, project: e.target.checked })} />
           Scrape project context
         </label>
-        <label style={{ display: "flex", alignItems: "center", gap: 8, color: "#F0F0F0", fontFamily: "monospace", fontSize: 13, marginBottom: 8, cursor: "pointer" }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, color: "#FFFFFF", fontFamily: "monospace", fontSize: 13, marginBottom: 8, cursor: "pointer" }}>
           <input type="checkbox" checked={spec.context.history}
             onChange={(e) => set("context", { ...spec.context, history: e.target.checked })} />
           Include iteration history
         </label>
         <label style={{ ...S.label, marginTop: 8 }}>Project root (leave blank for CWD)</label>
-        <input style={S.input} value={spec.context.project_root}
-          placeholder="/path/to/project"
-          onChange={(e) => set("context", { ...spec.context, project_root: e.target.value })} />
+        <div style={{ display: "flex", gap: 8 }}>
+          <input style={S.input} value={spec.context.project_root}
+            placeholder="/path/to/project"
+            onChange={(e) => set("context", { ...spec.context, project_root: e.target.value })} />
+          <button style={S.btnBrowse} onClick={async () => {
+            const folder = await pickFolder();
+            if (folder) set("context", { ...spec.context, project_root: folder });
+          }}>Browse</button>
+        </div>
         {mcpServers.length > 0 && (
           <div style={{ marginTop: 12 }}>
             <span style={S.label}>MCP servers (auto-discovered)</span>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
               {mcpServers.map((s) => (
-                <span key={s} style={{ fontSize: 11, fontFamily: "monospace", padding: "2px 8px", background: "#2E2E2E", border: "1px solid #7C3AED", color: "#A78BFA", borderRadius: 4 }}>
+                <span key={s} style={{ fontSize: 11, fontFamily: "monospace", padding: "2px 8px", background: "#111111", border: "1px solid #7C3AED", color: "#A78BFA", borderRadius: 4 }}>
                   {s}
                 </span>
               ))}

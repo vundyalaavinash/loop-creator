@@ -1,21 +1,23 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { PromptTemplate, getBaseUrl } from "../types";
+import { pickFolder, pickFiles } from "../utils/dialog";
 
 const CLI_OPTIONS = ["claude", "ollama", "devin"];
 
 const S = {
-  label: { display: "block" as const, color: "#8A8A8A", marginBottom: 4, fontSize: 12, fontFamily: "monospace", textTransform: "uppercase" as const, letterSpacing: 1 },
-  input: { width: "100%", background: "#2E2E2E", border: "1px solid #383838", borderRadius: 6, color: "#F0F0F0", padding: "8px 12px", fontSize: 14, fontFamily: "monospace", boxSizing: "border-box" as const },
-  textarea: { width: "100%", background: "#2E2E2E", border: "1px solid #383838", borderRadius: 6, color: "#F0F0F0", padding: "8px 12px", fontSize: 14, fontFamily: "monospace", resize: "vertical" as const, boxSizing: "border-box" as const },
-  section: { background: "#242424", border: "1px solid #383838", borderRadius: 8, padding: 16, marginBottom: 16 },
+  label: { display: "block" as const, color: "#6B7280", marginBottom: 4, fontSize: 12, fontFamily: "monospace", textTransform: "uppercase" as const, letterSpacing: 1 },
+  input: { width: "100%", background: "#111111", border: "1px solid #1E1E1E", borderRadius: 6, color: "#FFFFFF", padding: "8px 12px", fontSize: 14, fontFamily: "monospace", boxSizing: "border-box" as const },
+  textarea: { width: "100%", background: "#111111", border: "1px solid #1E1E1E", borderRadius: 6, color: "#FFFFFF", padding: "8px 12px", fontSize: 14, fontFamily: "monospace", resize: "vertical" as const, boxSizing: "border-box" as const },
+  section: { background: "#0A0A0A", border: "1px solid #1E1E1E", borderRadius: 8, padding: 16, marginBottom: 16 },
   chip: (active: boolean) => ({
-    padding: "6px 14px", borderRadius: 6, border: `1px solid ${active ? "#01C7B1" : "#383838"}`,
-    color: active ? "#01C7B1" : "#8A8A8A", background: active ? "#2E2E2E" : "transparent",
+    padding: "6px 14px", borderRadius: 6, border: `1px solid ${active ? "#01C7B1" : "#1E1E1E"}`,
+    color: active ? "#01C7B1" : "#6B7280", background: active ? "#111111" : "transparent",
     cursor: "pointer" as const, fontSize: 12, fontFamily: "monospace",
   }),
-  btnPrimary: { background: "#01C7B1", color: "#1C1C1C", border: "none", borderRadius: 6, padding: "10px 24px", fontWeight: 700, cursor: "pointer" as const, fontSize: 14, fontFamily: "monospace" },
-  btnSecondary: { background: "#2E2E2E", color: "#F0F0F0", border: "1px solid #383838", borderRadius: 6, padding: "10px 24px", fontWeight: 600, cursor: "pointer" as const, fontSize: 14, fontFamily: "monospace" },
+  btnPrimary: { background: "#01C7B1", color: "#000000", border: "none", borderRadius: 6, padding: "10px 24px", fontWeight: 700, cursor: "pointer" as const, fontSize: 14, fontFamily: "monospace" },
+  btnSecondary: { background: "#111111", color: "#FFFFFF", border: "1px solid #1E1E1E", borderRadius: 6, padding: "10px 24px", fontWeight: 600, cursor: "pointer" as const, fontSize: 14, fontFamily: "monospace" },
+  btnBrowse: { background: "transparent", color: "#01C7B1", border: "1px solid #1E1E1E", borderRadius: 6, padding: "6px 14px", cursor: "pointer" as const, fontSize: 12, fontFamily: "monospace", whiteSpace: "nowrap" as const },
 };
 
 export function PromptBuilder() {
@@ -25,7 +27,7 @@ export function PromptBuilder() {
     name: "", description_goal: "", variables: "",
     generator_cli: "claude", generator_model: "",
     judge_cli: "claude",
-    project_root: "", include_files: "",
+    project_root: "", include_files: [] as string[],
   });
   const [error, setError] = useState<string | null>(null);
   const [templates, setTemplates] = useState<PromptTemplate[]>([]);
@@ -47,7 +49,7 @@ export function PromptBuilder() {
           generator_model: spec.generator?.model ?? "",
           judge_cli: spec.judge?.cli ?? "claude",
           project_root: spec.context?.project_root ?? "",
-          include_files: (spec.context?.include_files ?? []).join(", "),
+          include_files: spec.context?.include_files ?? [],
         })));
     }
   }, [name]);
@@ -62,6 +64,10 @@ export function PromptBuilder() {
     }));
   }
 
+  function removeFile(path: string) {
+    setForm(f => ({ ...f, include_files: f.include_files.filter(p => p !== path) }));
+  }
+
   const save = async () => {
     setError(null);
     const payload = {
@@ -72,7 +78,7 @@ export function PromptBuilder() {
       judge: { cli: form.judge_cli, rubric: "", model: "" },
       context: {
         project_root: form.project_root,
-        include_files: form.include_files.split(",").map((s: string) => s.trim()).filter(Boolean),
+        include_files: form.include_files,
       },
     };
     const res = await fetch(`${getBaseUrl()}/api/prompts`, {
@@ -90,7 +96,7 @@ export function PromptBuilder() {
 
   return (
     <div style={{ padding: 24, maxWidth: 640 }}>
-      <h2 style={{ color: "#F0F0F0", fontFamily: "sans-serif", fontWeight: 600, fontSize: 18, marginBottom: 24 }}>
+      <h2 style={{ color: "#FFFFFF", fontFamily: "sans-serif", fontWeight: 600, fontSize: 18, marginBottom: 24 }}>
         {name ? "Edit Prompt" : "New Prompt"}
       </h2>
 
@@ -163,14 +169,36 @@ export function PromptBuilder() {
       {/* File Context */}
       <div style={S.section}>
         <label style={S.label}>File Context</label>
+
         <label style={{ ...S.label, marginBottom: 4 }}>Project Root</label>
-        <input style={{ ...S.input, marginBottom: 10 }} value={form.project_root}
-          placeholder="/path/to/project (leave blank for CWD)"
-          onChange={e => setForm(f => ({ ...f, project_root: e.target.value }))} />
-        <label style={S.label}>Include Files (comma-separated)</label>
-        <input style={S.input} value={form.include_files}
-          placeholder="src/main.py, lib/utils.py"
-          onChange={e => setForm(f => ({ ...f, include_files: e.target.value }))} />
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <input style={S.input} value={form.project_root}
+            placeholder="/path/to/project (leave blank for CWD)"
+            onChange={e => setForm(f => ({ ...f, project_root: e.target.value }))} />
+          <button style={S.btnBrowse} onClick={async () => {
+            const folder = await pickFolder();
+            if (folder) setForm(f => ({ ...f, project_root: folder }));
+          }}>Browse</button>
+        </div>
+
+        <label style={S.label}>Include Files</label>
+        <button style={{ ...S.btnBrowse, marginBottom: 8 }} onClick={async () => {
+          const files = await pickFiles();
+          if (files.length) setForm(f => ({
+            ...f,
+            include_files: [...new Set([...f.include_files, ...files])],
+          }));
+        }}>+ Add Files</button>
+        {form.include_files.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {form.include_files.map(p => (
+              <div key={p} style={{ display: "flex", alignItems: "center", gap: 8, background: "#111111", border: "1px solid #1E1E1E", borderRadius: 4, padding: "4px 10px" }}>
+                <span style={{ flex: 1, fontSize: 12, fontFamily: "monospace", color: "#FFFFFF", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p}</span>
+                <button onClick={() => removeFile(p)} style={{ background: "none", border: "none", color: "#6B7280", cursor: "pointer", fontSize: 14, lineHeight: 1 }}>×</button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <button onClick={save} style={S.btnPrimary}>Save Prompt</button>
