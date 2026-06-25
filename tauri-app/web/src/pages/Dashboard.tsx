@@ -4,6 +4,7 @@ import { EvolutionViewer } from "../components/EvolutionViewer";
 import { ResultsPanel } from "../components/ResultsPanel";
 import { useLoop } from "../hooks/useLoop";
 import { getBaseUrl, Variant } from "../types";
+import { C, S } from "../styles/theme";
 
 export function Dashboard() {
   const { id } = useParams<{ id: string }>();
@@ -21,7 +22,6 @@ export function Dashboard() {
       run(id);
       return () => stop();
     }
-    // Load best result statically for already-finished loops
     fetch(`${getBaseUrl()}/api/loops/${id}/best`)
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
@@ -42,35 +42,26 @@ export function Dashboard() {
   }, [id]);
 
   return (
-    <div className="p-6 max-w-3xl">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-primary font-mono font-semibold">{id}</h1>
-          <span className="text-xs text-muted font-mono">
-            {isRunning ? "running…" : bestVariant ? "complete" : "idle"}
-          </span>
+    <div style={S.page}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+        <button onClick={() => navigate("/loops")} style={S.btnSecondary}>← Loops</button>
+        <div style={{ flex: 1 }}>
+          <h1 style={S.pageTitle}>{id}</h1>
+          <span style={S.subtitle}>{isRunning ? "running…" : bestVariant ? "complete" : "idle"}</span>
         </div>
-        <div className="flex gap-2">
-          {isRunning && (
-            <button onClick={stop}
-              className="px-3 py-1.5 border border-red-700 text-red-400 font-mono text-xs rounded hover:bg-red-900 transition-colors">
-              Stop
-            </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          {isRunning ? (
+            <button onClick={stop} style={S.btnStop}>Stop</button>
+          ) : (
+            <button onClick={() => id && run(id)} style={S.btnPrimary}>Run</button>
           )}
-          <button onClick={() => navigate("/loops")}
-            className="px-3 py-1.5 border border-border-color text-muted font-mono text-xs rounded hover:text-primary transition-colors">
-            ← Back
-          </button>
+          <button onClick={() => navigate(`/edit/${id}`)} style={S.btnSecondary}>Edit</button>
         </div>
       </div>
 
-      {error && (
-        <div className="mb-4 p-3 bg-red-900 border border-red-700 text-red-300 rounded font-mono text-xs">
-          {error}
-        </div>
-      )}
+      {error && <div style={S.errorBanner}>{error}</div>}
 
-      <div className="space-y-4">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <EvolutionViewer events={events} isRunning={isRunning} />
         <ResultsPanel bestVariant={bestVariant} />
       </div>
