@@ -13,6 +13,7 @@ from fastapi.responses import StreamingResponse
 
 from creator.spec import LoopSpec, load_spec, save_spec
 from creator.runner import run_loop
+from creator.gepa.engine import GenerationEvent
 
 router = APIRouter(prefix="/api/loops")
 
@@ -96,6 +97,10 @@ async def run_loop_sse(loop_id: str):
             main_loop.call_soon_threadsafe(queue.put_nowait, ev)
         try:
             run_loop(spec, str(loop_dir), on_event=on_event)
+        except Exception as exc:
+            err = GenerationEvent(generation=0, variants=[], best_score=0.0,
+                                  event_type="error", error=str(exc))
+            main_loop.call_soon_threadsafe(queue.put_nowait, err)
         finally:
             main_loop.call_soon_threadsafe(queue.put_nowait, None)
 

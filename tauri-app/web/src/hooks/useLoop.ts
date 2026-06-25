@@ -38,6 +38,10 @@ export function useLoop() {
           if (!dataLine) continue;
           try {
             const ev: GenerationEvent = JSON.parse(dataLine.slice(6));
+            if (ev.event_type === "error") {
+              setError(ev.error ?? "Run failed");
+              return;
+            }
             setEvents((prev) => [...prev, ev]);
             if (ev.event_type === "done" && ev.variants.length > 0) {
               setBestVariant(ev.variants[0]);

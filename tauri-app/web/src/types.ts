@@ -11,6 +11,7 @@ export interface GenerationEvent {
   generation: number;
   variants: Variant[];
   best_score: number;
+  error?: string;
 }
 
 export interface LoopSummary {

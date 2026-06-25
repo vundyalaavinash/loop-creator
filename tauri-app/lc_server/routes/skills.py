@@ -18,6 +18,7 @@ from creator.skills.registry import (
     publish_skill,
 )
 from creator.skills.runner import run_skill
+from creator.gepa.engine import GenerationEvent
 
 router = APIRouter(prefix="/api/skills")
 
@@ -65,6 +66,10 @@ async def run_skill_sse(name: str):
             main_loop.call_soon_threadsafe(queue.put_nowait, ev)
         try:
             run_skill(spec, d, on_event=on_event)
+        except Exception as exc:
+            err = GenerationEvent(generation=0, variants=[], best_score=0.0,
+                                  event_type="error", error=str(exc))
+            main_loop.call_soon_threadsafe(queue.put_nowait, err)
         finally:
             main_loop.call_soon_threadsafe(queue.put_nowait, None)
 

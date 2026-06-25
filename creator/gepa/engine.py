@@ -29,6 +29,7 @@ class GenerationEvent:
     variants: list[Variant]
     best_score: float
     event_type: str = "generation"
+    error: str = ""
 
 
 class GEPAEngine:

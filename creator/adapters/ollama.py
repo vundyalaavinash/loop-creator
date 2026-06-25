@@ -19,14 +19,25 @@ class OllamaAdapter(LLMAdapter):
             return False
 
     def call(self, system: str, user: str) -> str:
-        response = httpx.post(
-            f"{self.base_url}/api/chat",
-            json={"model": self.model,
-                  "messages": [{"role": "system", "content": system},
-                                {"role": "user", "content": user}],
-                  "stream": False},
-            timeout=120.0,
-        )
+        try:
+            response = httpx.post(
+                f"{self.base_url}/api/chat",
+                json={"model": self.model,
+                      "messages": [{"role": "system", "content": system},
+                                    {"role": "user", "content": user}],
+                      "stream": False},
+                timeout=120.0,
+            )
+        except httpx.ConnectError:
+            raise RuntimeError(
+                f"Cannot connect to Ollama at {self.base_url}. "
+                "Is Ollama running? Start it with: ollama serve"
+            )
+        if response.status_code == 404:
+            raise RuntimeError(
+                f"Ollama model '{self.model}' not found. "
+                f"Pull it first: ollama pull {self.model}"
+            )
         response.raise_for_status()
         return response.json()["message"]["content"]
 
