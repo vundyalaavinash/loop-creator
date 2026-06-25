@@ -7,7 +7,7 @@ export interface Variant {
 }
 
 export interface GenerationEvent {
-  event_type: "generation" | "done" | "error";
+  event_type: "generation" | "progress" | "done" | "error";
   generation: number;
   variants: Variant[];
   best_score: number;

@@ -27,11 +27,11 @@ class ContextSpec(BaseModel):
 
 
 class GEPAParams(BaseModel):
-    population_size: int = 5
+    population_size: int = 2
     top_k: int = 2
-    max_generations: int = 10
+    max_generations: int = 5
     fitness_threshold: float = 0.85
-    stagnation_limit: int = 3
+    stagnation_limit: int = 2
     mutation_operators: list[MUTATION_OPS] = Field(
         default_factory=lambda: ["rephrase", "expand", "constrain", "crossover"]
     )

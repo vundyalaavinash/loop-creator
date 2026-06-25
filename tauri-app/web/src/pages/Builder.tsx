@@ -29,8 +29,8 @@ function defaultSpec(): LoopSpec {
     goal: "",
     generator: { cli: "claude", model: "" },
     judge: { cli: "claude", rubric: "", model: "" },
-    context: { project: true, history: true, external: [], mcp_auto_discover: true, project_root: "" },
-    gepa: { population_size: 5, top_k: 2, max_generations: 10, fitness_threshold: 0.85, stagnation_limit: 3 },
+    context: { project: false, history: false, external: [], mcp_auto_discover: false, project_root: "" },
+    gepa: { population_size: 2, top_k: 2, max_generations: 5, fitness_threshold: 0.85, stagnation_limit: 2 },
   };
 }
 

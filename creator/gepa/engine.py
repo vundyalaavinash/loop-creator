@@ -47,8 +47,9 @@ class GEPAEngine:
     def run(self, task: str, goal: str, context: str = "") -> Generator[GenerationEvent, None, None]:
         ctx_block = f"\n\nContext:\n{context}" if context else ""
 
-        # Generation 0: seed population
+        # Generation 0: seed population — yield after each variant for live feedback
         seed_variants = []
+        running_best = 0.0
         for i in range(self.params.population_size):
             prompt = f"Task: {task}{ctx_block}"
             output = self.generator.call(self.system_prompt, prompt)
@@ -56,8 +57,11 @@ class GEPAEngine:
             v = Variant(prompt=prompt, output=output, score=score, reason=reason, generation=0)
             seed_variants.append(v)
             self._all_variants.append(v)
+            running_best = max(running_best, score)
+            yield GenerationEvent(generation=0, variants=[v], best_score=running_best,
+                                  event_type="progress")
 
-        best_score = max(v.score for v in seed_variants)
+        best_score = running_best
         yield GenerationEvent(generation=0, variants=seed_variants, best_score=best_score)
 
         if best_score >= self.params.fitness_threshold:
@@ -74,6 +78,7 @@ class GEPAEngine:
             last_gen = gen
             new_variants = []
             ops = self.params.mutation_operators
+            gen_best = 0.0
             for i in range(self.params.population_size):
                 parent = survivors[i % len(survivors)]
                 op = ops[i % len(ops)]
@@ -88,8 +93,11 @@ class GEPAEngine:
                             reason=reason, generation=gen)
                 new_variants.append(v)
                 self._all_variants.append(v)
+                gen_best = max(gen_best, score)
+                yield GenerationEvent(generation=gen, variants=[v],
+                                      best_score=max(best_score, gen_best),
+                                      event_type="progress")
 
-            gen_best = max(v.score for v in new_variants)
             if gen_best <= best_score:
                 stagnation += 1
             else:
