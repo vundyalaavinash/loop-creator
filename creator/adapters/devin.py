@@ -33,8 +33,9 @@ class DevinAdapter(LLMAdapter):
 
     def _call_cli(self, system: str, user: str) -> str:
         result = subprocess.run(
-            [self.cli_cmd, "run", "--print", f"{system}\n\n{user}"],
-            capture_output=True, text=True, timeout=120,
+            [self.cli_cmd, "--print", f"{system}\n\n{user}"],
+            capture_output=True, text=True, timeout=300,
+            stdin=subprocess.DEVNULL,
         )
         if result.returncode != 0:
             raise RuntimeError(f"devin CLI error: {result.stderr.strip()}")

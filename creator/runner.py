@@ -17,13 +17,13 @@ from creator.spec import LoopSpec
 
 
 def build_adapter(cli: str, model: str = "") -> LLMAdapter:
+    if cli == "devin":
+        return DevinAdapter()
     if cli == "claude":
         return ClaudeAdapter(model=model or "sonnet")
     if cli == "ollama":
         return OllamaAdapter(model=model or "llama3.2")
-    if cli == "devin":
-        return DevinAdapter()
-    raise ValueError(f"Unknown CLI: {cli!r}. Supported: claude, ollama, devin")
+    raise ValueError(f"Unknown CLI: {cli!r}. Supported: devin, claude, ollama")
 
 
 def detect_available_adapters() -> list[str]:

@@ -25,8 +25,8 @@ export function PromptBuilder() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "", description_goal: "", variables: "",
-    generator_cli: "claude", generator_model: "",
-    judge_cli: "claude",
+    generator_cli: "devin", generator_model: "",
+    judge_cli: "devin",
     project_root: "", include_files: [] as string[],
   });
   const [error, setError] = useState<string | null>(null);

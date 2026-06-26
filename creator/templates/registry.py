@@ -10,8 +10,8 @@ class LoopTemplate:
     loop_type: str
     task: str
     goal: str
-    generator_cli: str = "claude"
-    judge_cli: str = "claude"
+    generator_cli: str = "devin"
+    judge_cli: str = "devin"
 
 
 @dataclass
@@ -21,8 +21,8 @@ class SkillTemplate:
     description: str
     category: str
     description_goal: str
-    generator_cli: str = "claude"
-    judge_cli: str = "claude"
+    generator_cli: str = "devin"
+    judge_cli: str = "devin"
 
 
 @dataclass
@@ -32,8 +32,8 @@ class PromptTemplate:
     description: str
     description_goal: str
     variables: list[str] = field(default_factory=list)
-    generator_cli: str = "claude"
-    judge_cli: str = "claude"
+    generator_cli: str = "devin"
+    judge_cli: str = "devin"
 
 
 LOOP_TEMPLATES: list[LoopTemplate] = [
